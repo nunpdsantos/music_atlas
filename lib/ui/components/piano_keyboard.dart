@@ -14,15 +14,11 @@ class PianoKeyboard extends StatelessWidget {
   final int octaves;
   final bool isDark;
 
-  /// Starting pitch class (0 = C). You can change this if you want the keyboard to start elsewhere.
-  final int startPc;
-
   const PianoKeyboard({
     super.key,
     required this.tones,
     required this.root,
     this.octaves = 1,
-    this.startPc = 0,
     this.isDark = false,
   });
 
@@ -108,7 +104,6 @@ class PianoKeyboard extends StatelessWidget {
                           tones: tones,
                           root: root,
                           octaves: octaves <= 1 ? 1 : 2,
-                          startPc: startPc,
                           isDark: isDark,
                         ),
                       ),
@@ -128,14 +123,12 @@ class _PremiumPianoPainter extends CustomPainter {
   final List<String> tones;
   final String root;
   final int octaves;
-  final int startPc;
   final bool isDark;
 
   _PremiumPianoPainter({
     required this.tones,
     required this.root,
     required this.octaves,
-    required this.startPc,
     required this.isDark,
   });
 
@@ -410,18 +403,16 @@ class _PremiumPianoPainter extends CustomPainter {
   }
 
   int _pcForWhiteIndex(int whiteIndex) {
-    final oct = (whiteIndex ~/ 7);
     final degree = whiteIndex % 7;
-    return (_whitePcs[degree] + (oct * 12) + startPc) % 12;
+    // White keys are always natural notes: C D E F G A B
+    return _whitePcs[degree];
   }
 
   int _pcForBlackAtWhite(int leftWhiteIndex) {
     final degree = leftWhiteIndex % 7;
-    final oct = (leftWhiteIndex ~/ 7);
-
+    // Black keys are always sharps/flats: C# D# F# G# A#
     final map = <int, int>{0: 1, 1: 3, 3: 6, 4: 8, 5: 10};
-    final pc = map[degree] ?? 1;
-    return (pc + (oct * 12) + startPc) % 12;
+    return map[degree] ?? 1;
   }
 
   void _drawMarkerIfNeeded(
@@ -555,7 +546,6 @@ class _PremiumPianoPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _PremiumPianoPainter oldDelegate) {
     return oldDelegate.octaves != octaves ||
-        oldDelegate.startPc != startPc ||
         oldDelegate.root != root ||
         oldDelegate.isDark != isDark ||
         oldDelegate.tones.length != tones.length;

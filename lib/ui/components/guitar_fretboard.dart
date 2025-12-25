@@ -136,12 +136,12 @@ class GuitarFretboardPainter extends CustomPainter {
   void _drawFretboardBackground(Canvas canvas, Size size, double boardStart, double boardEnd, double h, double paddingY) {
     final Rect boardRect = Rect.fromLTRB(boardStart, 0, boardEnd, h);
 
-    // Rich rosewood gradient
+    // Premium ebony wood gradient - deep black with subtle warm undertones
     final Paint woodBasePaint = Paint()
       ..shader = LinearGradient(
         colors: isDark
-          ? [const Color(0xFF2D1810), const Color(0xFF4A2C20), const Color(0xFF3D2218)]
-          : [const Color(0xFF3E1F14), const Color(0xFF5D3423), const Color(0xFF4A2819)],
+          ? [const Color(0xFF1A1816), const Color(0xFF252220), const Color(0xFF1F1C1A)]
+          : [const Color(0xFF1E1B19), const Color(0xFF2A2725), const Color(0xFF232120)],
         stops: const [0.0, 0.5, 1.0],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
@@ -157,14 +157,14 @@ class GuitarFretboardPainter extends CustomPainter {
     );
     canvas.drawRRect(boardRRect, woodBasePaint);
 
-    // Add subtle wood grain texture effect
+    // Add subtle ebony wood grain texture - finer and more subtle than rosewood
     final Paint grainPaint = Paint()
-      ..color = Colors.black.withOpacity(0.08)
-      ..strokeWidth = 0.5;
+      ..color = Colors.white.withOpacity(0.03)
+      ..strokeWidth = 0.3;
 
-    for (int i = 0; i < 30; i++) {
-      double y = paddingY + (i * (h - paddingY * 2) / 30);
-      double waviness = math.sin(i * 0.5) * 2;
+    for (int i = 0; i < 40; i++) {
+      double y = paddingY + (i * (h - paddingY * 2) / 40);
+      double waviness = math.sin(i * 0.3) * 1.5;
       canvas.drawLine(
         Offset(boardStart + waviness, y),
         Offset(boardEnd - waviness, y),
@@ -176,21 +176,26 @@ class GuitarFretboardPainter extends CustomPainter {
     final Paint innerShadow = Paint()
       ..shader = LinearGradient(
         colors: [
-          Colors.black.withOpacity(0.15),
+          Colors.black.withOpacity(0.25),
           Colors.transparent,
         ],
         begin: Alignment.topCenter,
-        end: const Alignment(0, 0.1),
+        end: const Alignment(0, 0.15),
       ).createShader(boardRect);
     canvas.drawRRect(boardRRect, innerShadow);
 
-    // Outer subtle glow/border
+    // Premium edge highlight for polished ebony look
+    final Paint highlightPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5
+      ..color = Colors.white.withOpacity(isDark ? 0.08 : 0.1);
+    canvas.drawRRect(boardRRect, highlightPaint);
+
+    // Outer subtle border
     final Paint borderPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..color = isDark
-        ? Colors.white.withOpacity(0.05)
-        : Colors.black.withOpacity(0.1);
+      ..strokeWidth = 1.0
+      ..color = Colors.black.withOpacity(0.3);
     canvas.drawRRect(boardRRect, borderPaint);
   }
 

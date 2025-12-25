@@ -98,7 +98,6 @@ class _PianoPainter extends CustomPainter {
     final whiteKeyColor = isDark ? const Color(0xFFE2E8F0) : Colors.white;
     final blackKeyColor = isDark ? const Color(0xFF0F172A) : const Color(0xFF1B1F2A);
     final borderOpacity = isDark ? 0.3 : 0.14;
-    final blackBorderOpacity = isDark ? 0.3 : 0.12;
 
     final r = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, 0, size.width, size.height),
@@ -106,33 +105,62 @@ class _PianoPainter extends CustomPainter {
     );
     canvas.drawRRect(r, Paint()..color = whiteKeyColor.withOpacity(0.9));
 
-    // Draw white keys
-    final whitePaint = Paint()..color = whiteKeyColor;
-    final borderPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = const Color(0xFF1B1F2A).withOpacity(borderOpacity);
-
+    // Draw white keys with enhanced 3D effect
     for (int i = 0; i < whiteKeyCount; i++) {
       final x = i * whiteW;
+      final keyRect = Rect.fromLTWH(x, 0, whiteW, whiteH);
       final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x, 0, whiteW, whiteH),
+        keyRect,
         Radius.circular(i == 0 || i == whiteKeyCount - 1 ? 16 : 6),
       );
+
+      // Draw key shadow for depth
+      final shadowRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x + 1, 2, whiteW - 1, whiteH - 2),
+        Radius.circular(i == 0 || i == whiteKeyCount - 1 ? 16 : 6),
+      );
+      canvas.drawRRect(
+        shadowRect,
+        Paint()..color = Colors.black.withOpacity(0.05)
+      );
+
+      // Draw key with subtle gradient for 3D effect
+      final whitePaint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            whiteKeyColor,
+            whiteKeyColor.withOpacity(0.98),
+            whiteKeyColor.withOpacity(0.95),
+          ],
+          stops: const [0.0, 0.7, 1.0],
+        ).createShader(keyRect);
+
       canvas.drawRRect(rect, whitePaint);
+
+      // Add subtle highlight at top for realism
+      final highlightRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x + 2, 4, whiteW - 4, whiteH * 0.1),
+        const Radius.circular(4),
+      );
+      canvas.drawRRect(
+        highlightRect,
+        Paint()..color = Colors.white.withOpacity(isDark ? 0.15 : 0.3)
+      );
+
+      // Draw border
+      final borderPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = const Color(0xFF1B1F2A).withOpacity(borderOpacity);
       canvas.drawRRect(rect, borderPaint);
 
       final pc = _pcForWhiteIndex(i);
       _drawMarkerIfNeeded(canvas, tonesSet, rootPc, pc, Offset(x + whiteW / 2, whiteH * 0.78));
     }
 
-    // Draw black keys (on top)
-    final blackPaint = Paint()..color = blackKeyColor;
-    final blackBorder = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = (isDark ? Colors.grey[600]! : Colors.white).withOpacity(blackBorderOpacity);
-
+    // Draw black keys (on top) with enhanced 3D effect
     for (int oct = 0; oct < octaves; oct++) {
       // Pattern positions relative to white keys: between C-D, D-E, F-G, G-A, A-B
       final baseWhiteIndex = oct * 7;
@@ -150,24 +178,67 @@ class _PianoPainter extends CustomPainter {
         final pc = _pcForBlackAtWhite(leftWhite);
 
         final xCenter = (leftWhite + 1) * whiteW - whiteW * 0.33;
+        final blackKeyRect = Rect.fromLTWH(xCenter - blackW / 2, 0, blackW, blackH);
         final rect = RRect.fromRectAndRadius(
-          Rect.fromLTWH(xCenter - blackW / 2, 0, blackW, blackH),
+          blackKeyRect,
           const Radius.circular(10),
         );
+
+        // Draw black key shadow for strong 3D effect
+        final shadowRect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(xCenter - blackW / 2 + 1, 3, blackW, blackH + 4),
+          const Radius.circular(10),
+        );
+        canvas.drawRRect(
+          shadowRect,
+          Paint()
+            ..color = Colors.black.withOpacity(0.3)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4)
+        );
+
+        // Draw black key with gradient for depth
+        final blackPaint = Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              blackKeyColor,
+              blackKeyColor.withOpacity(0.95),
+              Colors.black.withOpacity(0.9),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ).createShader(blackKeyRect);
+
         canvas.drawRRect(rect, blackPaint);
+
+        // Add highlight on top edge for realism
+        final highlightRect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(xCenter - blackW / 2 + 3, 4, blackW - 6, 8),
+          const Radius.circular(4),
+        );
+        canvas.drawRRect(
+          highlightRect,
+          Paint()..color = Colors.white.withOpacity(isDark ? 0.08 : 0.12)
+        );
+
+        // Draw border
+        final blackBorder = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..color = Colors.white.withOpacity(isDark ? 0.1 : 0.15);
         canvas.drawRRect(rect, blackBorder);
 
         _drawMarkerIfNeeded(canvas, tonesSet, rootPc, pc, Offset(xCenter, blackH * 0.70), onBlack: true);
       }
     }
 
-    // subtle outer stroke
+    // Enhanced outer stroke for definition
     canvas.drawRRect(
       r,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..color = const Color(0xFF1B1F2A).withOpacity(isDark ? 0.2 : 0.08),
+        ..strokeWidth = 2
+        ..color = const Color(0xFF1B1F2A).withOpacity(isDark ? 0.25 : 0.12),
     );
   }
 
@@ -202,37 +273,84 @@ class _PianoPainter extends CustomPainter {
     if (matching == null) return;
 
     final isRoot = (pc == rootPc);
-
-    final ring = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..color = const Color(0xFF2D63FF).withOpacity(onBlack ? 0.85 : 0.72);
+    const double radius = 14.0;
 
     // Adjust fill color based on dark mode
     final Color fillColor;
+    final Color ringColor;
     if (isRoot) {
       fillColor = const Color(0xFF2D63FF);
+      ringColor = const Color(0xFF2D63FF);
     } else if (onBlack) {
       fillColor = isDark ? const Color(0xFF0F172A) : const Color(0xFF1B1F2A);
+      ringColor = const Color(0xFF2D63FF);
     } else {
       fillColor = isDark ? const Color(0xFFE2E8F0) : Colors.white;
+      ringColor = const Color(0xFF2D63FF);
     }
 
-    final fill = Paint()
-      ..style = PaintingStyle.fill
-      ..color = fillColor;
+    // Draw outer glow for emphasis
+    final glowPaint = Paint()
+      ..color = ringColor.withOpacity(0.25)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawCircle(center, radius + 4, glowPaint);
 
+    // Draw shadow for depth
     final shadow = Paint()
       ..style = PaintingStyle.fill
-      ..color = Colors.black.withOpacity(0.07);
+      ..color = Colors.black.withOpacity(0.15)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    canvas.drawCircle(center.translate(0, 2.5), radius, shadow);
 
-    canvas.drawCircle(center.translate(0, 2), 13, shadow);
-    canvas.drawCircle(center, 13, fill);
-    canvas.drawCircle(center, 13, ring);
+    // Draw fill with gradient for depth
+    if (isRoot) {
+      final markerRect = Rect.fromCircle(center: center, radius: radius);
+      final fill = Paint()
+        ..shader = RadialGradient(
+          colors: [
+            fillColor.withOpacity(0.95),
+            fillColor,
+            fillColor.withOpacity(0.85),
+          ],
+          stops: const [0.0, 0.6, 1.0],
+        ).createShader(markerRect);
+      canvas.drawCircle(center, radius, fill);
+
+      // Add highlight for 3D effect
+      final highlightPaint = Paint()
+        ..shader = RadialGradient(
+          colors: [
+            Colors.white.withOpacity(0.3),
+            Colors.white.withOpacity(0.0),
+          ],
+          stops: const [0.0, 1.0],
+        ).createShader(Rect.fromCircle(center: center.translate(-3, -3), radius: radius * 0.5));
+      canvas.drawCircle(center.translate(-3, -3), radius * 0.5, highlightPaint);
+    } else {
+      // Non-root notes use solid fill
+      final fill = Paint()
+        ..style = PaintingStyle.fill
+        ..color = fillColor;
+      canvas.drawCircle(center, radius, fill);
+    }
+
+    // Draw outer ring
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..color = ringColor.withOpacity(onBlack ? 0.9 : 0.8);
+    canvas.drawCircle(center, radius, ring);
+
+    // Draw inner ring for extra definition
+    final innerRing = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = ringColor.withOpacity(0.3);
+    canvas.drawCircle(center, radius - 1.5, innerRing);
 
     // label letter
     final label = matching;
-    
+
     // Adjust text color based on background
     final Color textColor;
     if (isRoot) {
@@ -242,10 +360,18 @@ class _PianoPainter extends CustomPainter {
     } else {
       textColor = isDark ? const Color(0xFF0F172A) : const Color(0xFF1B1F2A);
     }
-    
+
     final style = theme.textTheme.labelMedium?.copyWith(
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w900,
+      fontSize: 11,
       color: textColor,
+      shadows: isRoot ? [
+        Shadow(
+          color: Colors.black.withOpacity(0.4),
+          offset: const Offset(0, 1),
+          blurRadius: 2,
+        ),
+      ] : null,
     );
 
     final tp = TextPainter(

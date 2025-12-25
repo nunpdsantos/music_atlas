@@ -77,14 +77,28 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
       ),
       child: Column(
         children: [
-          // Drag Handle
+          // Enhanced Drag Handle
           const SizedBox(height: 8),
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 5,
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey[600] : Colors.grey[300], 
-                borderRadius: BorderRadius.circular(2),
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [Colors.grey[700]!, Colors.grey[600]!]
+                      : [Colors.grey[400]!, Colors.grey[300]!],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(2.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
             ),
           ),
@@ -164,13 +178,34 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
         decoration: BoxDecoration(
           color: isActive ? cardBg : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: isActive 
-              ? [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 4)] 
+          border: isActive
+              ? Border.all(
+                  color: AppTheme.tonicBlue.withOpacity(0.3),
+                  width: 1.5,
+                )
+              : null,
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                  BoxShadow(
+                    color: AppTheme.tonicBlue.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: -2,
+                  ),
+                ]
               : [],
         ),
         child: Text(
           label,
-          style: TextStyle(fontWeight: FontWeight.bold, color: isActive ? textPrimary : textSecondary),
+          style: TextStyle(
+            fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+            color: isActive ? textPrimary : textSecondary,
+            fontSize: 14,
+          ),
         ),
       ),
     );
@@ -288,15 +323,58 @@ class _LegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 12, height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
         ),
-        const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textSecondary)),
-      ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  color.withOpacity(0.9),
+                  color,
+                  color.withOpacity(0.85),
+                ],
+                stops: const [0.0, 0.6, 1.0],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.4),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: textSecondary,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

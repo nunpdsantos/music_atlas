@@ -410,18 +410,16 @@ class _PremiumPianoPainter extends CustomPainter {
   }
 
   int _pcForWhiteIndex(int whiteIndex) {
-    final oct = (whiteIndex ~/ 7);
     final degree = whiteIndex % 7;
-    return (_whitePcs[degree] + (oct * 12) + startPc) % 12;
+    // White keys are always C, D, E, F, G, A, B regardless of startPc
+    return _whitePcs[degree];
   }
 
   int _pcForBlackAtWhite(int leftWhiteIndex) {
     final degree = leftWhiteIndex % 7;
-    final oct = (leftWhiteIndex ~/ 7);
-
+    // Black keys: C#=1, D#=3, F#=6, G#=8, A#=10
     final map = <int, int>{0: 1, 1: 3, 3: 6, 4: 8, 5: 10};
-    final pc = map[degree] ?? 1;
-    return (pc + (oct * 12) + startPc) % 12;
+    return map[degree] ?? 1;
   }
 
   void _drawMarkerIfNeeded(

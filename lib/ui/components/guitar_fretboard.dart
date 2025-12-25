@@ -135,63 +135,137 @@ class GuitarFretboardPainter extends CustomPainter {
 
   void _drawFretboardBackground(Canvas canvas, Size size, double boardStart, double boardEnd, double h, double paddingY) {
     final Rect boardRect = Rect.fromLTRB(boardStart, 0, boardEnd, h);
+    final double bindingWidth = 3.0;
 
-    // Rich rosewood gradient
+    // Draw outer shadow for depth
+    final RRect shadowRRect = RRect.fromRectAndCorners(
+      Rect.fromLTRB(boardStart - 2, 2, boardEnd + 2, h + 3),
+      topLeft: const Radius.circular(6),
+      bottomLeft: const Radius.circular(6),
+      topRight: const Radius.circular(6),
+      bottomRight: const Radius.circular(6),
+    );
+    canvas.drawRRect(
+      shadowRRect,
+      Paint()..color = Colors.black.withOpacity(0.35),
+    );
+
+    // Draw cream/ivory binding around the fretboard edge
+    final RRect bindingRRect = RRect.fromRectAndCorners(
+      Rect.fromLTRB(boardStart - bindingWidth, -bindingWidth, boardEnd + bindingWidth, h + bindingWidth),
+      topLeft: const Radius.circular(5),
+      bottomLeft: const Radius.circular(5),
+      topRight: const Radius.circular(5),
+      bottomRight: const Radius.circular(5),
+    );
+    final Paint bindingPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFFFFFEF5),
+          const Color(0xFFF5F0E0),
+          const Color(0xFFEDE8D8),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(bindingRRect.outerRect);
+    canvas.drawRRect(bindingRRect, bindingPaint);
+
+    // Binding highlight
+    canvas.drawRRect(
+      bindingRRect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5
+        ..color = Colors.white.withOpacity(0.6),
+    );
+
+    // Rich rosewood/ebony gradient for main fretboard
+    final RRect boardRRect = RRect.fromRectAndCorners(
+      boardRect,
+      topLeft: const Radius.circular(3),
+      bottomLeft: const Radius.circular(3),
+      topRight: const Radius.circular(3),
+      bottomRight: const Radius.circular(3),
+    );
+
     final Paint woodBasePaint = Paint()
       ..shader = LinearGradient(
         colors: isDark
-          ? [const Color(0xFF2D1810), const Color(0xFF4A2C20), const Color(0xFF3D2218)]
-          : [const Color(0xFF3E1F14), const Color(0xFF5D3423), const Color(0xFF4A2819)],
-        stops: const [0.0, 0.5, 1.0],
+          ? [const Color(0xFF1E1008), const Color(0xFF3A2015), const Color(0xFF2D1810), const Color(0xFF1A0E08)]
+          : [const Color(0xFF2A1510), const Color(0xFF4D2A1C), const Color(0xFF3E1F14), const Color(0xFF2A1510)],
+        stops: const [0.0, 0.3, 0.7, 1.0],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(boardRect);
-
-    // Draw base wood with rounded corners for premium feel
-    final RRect boardRRect = RRect.fromRectAndCorners(
-      boardRect,
-      topLeft: const Radius.circular(4),
-      bottomLeft: const Radius.circular(4),
-      topRight: const Radius.circular(4),
-      bottomRight: const Radius.circular(4),
-    );
     canvas.drawRRect(boardRRect, woodBasePaint);
 
-    // Add subtle wood grain texture effect
-    final Paint grainPaint = Paint()
-      ..color = Colors.black.withOpacity(0.08)
-      ..strokeWidth = 0.5;
+    // Add realistic wood grain texture - varied strokes
+    final random = math.Random(42); // Seeded for consistency
+    for (int i = 0; i < 60; i++) {
+      double y = paddingY * 0.5 + (i * (h - paddingY) / 60);
+      double waviness = math.sin(i * 0.4) * 3 + random.nextDouble() * 2;
+      double opacity = 0.03 + random.nextDouble() * 0.05;
+      double strokeWidth = 0.3 + random.nextDouble() * 0.4;
 
-    for (int i = 0; i < 30; i++) {
-      double y = paddingY + (i * (h - paddingY * 2) / 30);
-      double waviness = math.sin(i * 0.5) * 2;
       canvas.drawLine(
-        Offset(boardStart + waviness, y),
-        Offset(boardEnd - waviness, y),
-        grainPaint,
+        Offset(boardStart + waviness + random.nextDouble() * 5, y),
+        Offset(boardEnd - waviness - random.nextDouble() * 5, y),
+        Paint()
+          ..color = Colors.black.withOpacity(opacity)
+          ..strokeWidth = strokeWidth,
       );
     }
 
-    // Subtle inner shadow for depth
-    final Paint innerShadow = Paint()
+    // Add some lighter grain highlights
+    for (int i = 0; i < 20; i++) {
+      double y = paddingY + (i * (h - paddingY * 2) / 20) + random.nextDouble() * 5;
+      double waviness = math.sin(i * 0.6) * 2;
+
+      canvas.drawLine(
+        Offset(boardStart + 10 + waviness, y),
+        Offset(boardEnd - 10 - waviness, y),
+        Paint()
+          ..color = const Color(0xFF8B5A3C).withOpacity(0.08)
+          ..strokeWidth = 0.8,
+      );
+    }
+
+    // Top edge shadow (depth effect - fretboard sinks into neck)
+    final Paint topShadow = Paint()
       ..shader = LinearGradient(
         colors: [
-          Colors.black.withOpacity(0.15),
+          Colors.black.withOpacity(0.25),
+          Colors.black.withOpacity(0.08),
           Colors.transparent,
         ],
+        stops: const [0.0, 0.3, 1.0],
         begin: Alignment.topCenter,
-        end: const Alignment(0, 0.1),
+        end: const Alignment(0, 0.15),
       ).createShader(boardRect);
-    canvas.drawRRect(boardRRect, innerShadow);
+    canvas.drawRRect(boardRRect, topShadow);
 
-    // Outer subtle glow/border
-    final Paint borderPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..color = isDark
-        ? Colors.white.withOpacity(0.05)
-        : Colors.black.withOpacity(0.1);
-    canvas.drawRRect(boardRRect, borderPaint);
+    // Bottom edge highlight (light reflection)
+    final Paint bottomHighlight = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.transparent,
+          Colors.white.withOpacity(0.03),
+          Colors.white.withOpacity(0.08),
+        ],
+        stops: const [0.0, 0.7, 1.0],
+        begin: const Alignment(0, -0.2),
+        end: Alignment.bottomCenter,
+      ).createShader(boardRect);
+    canvas.drawRRect(boardRRect, bottomHighlight);
+
+    // Inner border for definition
+    canvas.drawRRect(
+      boardRRect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5
+        ..color = Colors.black.withOpacity(0.3),
+    );
   }
 
   void _drawFretMarkers(Canvas canvas, double boardStart, double boardEnd, double h, double paddingY) {

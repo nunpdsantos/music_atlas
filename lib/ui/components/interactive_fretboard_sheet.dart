@@ -3,8 +3,11 @@ import '../../core/theme.dart';
 import '../../core/note_utils.dart';
 import 'guitar_fretboard.dart';
 import 'piano_keyboard.dart';
-import 'fretboard_overview.dart'; 
+import 'fretboard_overview.dart';
 
+/// Premium interactive instrument sheet with elegant design.
+/// Provides a polished interface for visualizing chords and scales
+/// on guitar fretboard and piano keyboard.
 class InteractiveFretboardSheet extends StatefulWidget {
   final String? chordName;
   final String? title;
@@ -32,16 +35,16 @@ class InteractiveFretboardSheet extends StatefulWidget {
 class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
   int _selectedInstrument = 0; // 0 = Guitar, 1 = Piano
   late ScrollController _scrollController;
-  
+
   // Player's View: Headstock on Right
-  final bool _leftHanded = true; 
+  final bool _leftHanded = true;
 
   @override
   void initState() {
     super.initState();
     _selectedInstrument = widget.defaultToPiano ? 1 : 0;
     _scrollController = ScrollController();
-    
+
     // Default scroll to the far right (Open Position) since headstock is on right
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients && _selectedInstrument == 0) {
@@ -60,7 +63,6 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Theme-aware colors
     final cardBg = AppTheme.getCardBg(context);
     final borderColor = AppTheme.getBorderColor(context);
     final textPrimary = AppTheme.getTextPrimary(context);
@@ -69,21 +71,28 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
     final isDark = AppTheme.isDark(context);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.70,
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      height: MediaQuery.of(context).size.height * 0.72,
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           // Drag Handle
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey[600] : Colors.grey[300], 
+                color: isDark ? Colors.grey[600] : Colors.grey[350],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -91,21 +100,33 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
           const SizedBox(height: 16),
 
           // Header
-          _buildHeader(context, cardBg, scaffoldBg, textPrimary, textSecondary, isDark),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: _buildHeader(context, cardBg, scaffoldBg, textPrimary, textSecondary, isDark),
+          ),
           const SizedBox(height: 16),
 
           // DYNAMIC LEGEND (Only shows present intervals)
           if (_safeTones.isNotEmpty)
-            _buildDynamicLegend(textSecondary),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildDynamicLegend(textSecondary, isDark),
+            ),
 
           const SizedBox(height: 16),
-          Divider(height: 1, color: borderColor),
-          
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(height: 1, color: borderColor.withOpacity(0.5)),
+          ),
+
           // Instrument View
           Expanded(
-            child: _selectedInstrument == 0 
-                ? _buildGuitarLayout(textSecondary, isDark) 
-                : _buildPianoLayout(context, isDark),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: _selectedInstrument == 0
+                  ? _buildGuitarLayout(textSecondary, isDark)
+                  : _buildPianoLayout(context, isDark),
+            ),
           ),
         ],
       ),
@@ -115,7 +136,7 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
   Widget _buildHeader(BuildContext context, Color cardBg, Color scaffoldBg, Color textPrimary, Color textSecondary, bool isDark) {
     return Row(
       children: [
-        // Chord name column - constrained to prevent overflow
+        // Chord name column
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,25 +144,54 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
             children: [
               Text(
                 widget.chordName ?? widget.title ?? "Selection",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: textPrimary),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: textPrimary,
+                  letterSpacing: -0.5,
+                ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
               if (widget.root.isNotEmpty)
-                Text(
-                  "${widget.root} Root",
-                  style: TextStyle(fontSize: 14, color: textSecondary),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppTheme.tonicBlue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "${widget.root} Root",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),
         ),
         const SizedBox(width: 12),
-        // Toggle buttons - fixed width
+        // Toggle buttons
         Container(
-          height: 40,
+          height: 42,
           decoration: BoxDecoration(
-            color: scaffoldBg, 
-            borderRadius: BorderRadius.circular(20),
+            color: scaffoldBg,
+            borderRadius: BorderRadius.circular(21),
+            border: Border.all(
+              color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
+              width: 1,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -159,29 +209,39 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
     final bool isActive = _selectedInstrument == index;
     return GestureDetector(
       onTap: () => setState(() => _selectedInstrument = index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: isActive ? cardBg : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: isActive 
-              ? [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 4)] 
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.25 : 0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
               : [],
         ),
         child: Text(
           label,
-          style: TextStyle(fontWeight: FontWeight.bold, color: isActive ? textPrimary : textSecondary),
+          style: TextStyle(
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 14,
+            color: isActive ? textPrimary : textSecondary,
+          ),
         ),
       ),
     );
   }
 
-  // --- DYNAMIC LEGEND LOGIC ---
-  Widget _buildDynamicLegend(Color textSecondary) {
+  Widget _buildDynamicLegend(Color textSecondary, bool isDark) {
     final rootPc = NoteUtils.pitchClass(widget.root);
     final Set<int> presentIntervals = {};
-    
-    // 1. Identify which intervals exist in the tones
+
     for (var tone in _safeTones) {
       int pc = NoteUtils.pitchClass(tone);
       if (pc != -1) {
@@ -190,83 +250,115 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
       }
     }
 
-    // 2. Use centralized theme colors and labels
     final allIntervals = List.generate(12, (i) => {
       'val': i,
       'label': AppTheme.getIntervalLabel(i),
       'color': AppTheme.getIntervalColor(i),
     });
 
-    // 3. Filter and Build UI
     final activeItems = allIntervals.where((i) => presentIntervals.contains(i['val'])).toList();
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: activeItems.map((item) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: _LegendItem(color: item['color'] as Color, label: item['label'] as String, textSecondary: textSecondary),
-          );
-        }).toList(),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withOpacity(0.04)
+            : Colors.black.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: activeItems.map((item) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: _PremiumLegendItem(
+                color: item['color'] as Color,
+                label: item['label'] as String,
+                textSecondary: textSecondary,
+                isDark: isDark,
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
 
   Widget _buildGuitarLayout(Color textSecondary, bool isDark) {
-    // We want exactly 5 frets visible on screen.
-    // The screen width (minus padding) divided by 5 gives us the fret width.
-    final double screenWidth = MediaQuery.of(context).size.width - 40; 
+    final double screenWidth = MediaQuery.of(context).size.width - 40;
     final double fretWidth = screenWidth / 5.0;
-    
-    // We render 12 frets total (plus open strings).
-    // The content width is fretWidth * 12.
     final double contentWidth = fretWidth * 12;
 
     return Column(
       children: [
         Expanded(
-          child: GuitarFretboard(
-            tones: _safeTones,
-            root: widget.root,
-            octaves: 2,
-            leftHanded: _leftHanded,
-            scrollController: _scrollController,
-            fretWidth: fretWidth, // Pass the calculated width
-            totalFrets: 12, // Standard classical view usually goes to 12
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.12),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: GuitarFretboard(
+                tones: _safeTones,
+                root: widget.root,
+                octaves: 2,
+                leftHanded: _leftHanded,
+                scrollController: _scrollController,
+                fretWidth: fretWidth,
+                totalFrets: 12,
+              ),
+            ),
           ),
         ),
-        
-        // Overview / Scrollbar
+
+        // Navigation hint and overview
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Icon(
+              Icons.swipe,
+              size: 14,
+              color: textSecondary.withOpacity(0.6),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              "Slide to navigate",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: textSecondary.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
-        Text("Scroll Neck", style: TextStyle(fontSize: 10, color: textSecondary)),
-        const SizedBox(height: 4),
-        SizedBox(
-          height: 40,
-          child: FretboardOverview(
-            tones: _safeTones,
-            root: widget.root,
-            octaves: 2,
-            leftHanded: _leftHanded,
-            viewportWidth: screenWidth,
-            contentWidth: contentWidth,
-            scrollController: _scrollController,
-            isDark: isDark,
-          ),
+        FretboardOverview(
+          tones: _safeTones,
+          root: widget.root,
+          octaves: 2,
+          leftHanded: _leftHanded,
+          viewportWidth: screenWidth,
+          contentWidth: contentWidth,
+          scrollController: _scrollController,
+          isDark: isDark,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 16),
       ],
     );
   }
 
   Widget _buildPianoLayout(BuildContext context, bool isDark) {
-    // Calculate starting pitch class based on root
-    // This centers the piano view around the chord/scale root
     final rootPc = NoteUtils.pitchClass(widget.root);
-    
-    // Start from the root's pitch class, or C if invalid
     final startPc = rootPc >= 0 ? rootPc : 0;
-    
+
     return Center(
       child: PianoKeyboard(
         tones: _safeTones,
@@ -279,23 +371,55 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
   }
 }
 
-class _LegendItem extends StatelessWidget {
+/// Premium styled legend item with subtle effects.
+class _PremiumLegendItem extends StatelessWidget {
   final Color color;
   final String label;
   final Color textSecondary;
+  final bool isDark;
 
-  const _LegendItem({required this.color, required this.label, required this.textSecondary});
+  const _PremiumLegendItem({
+    required this.color,
+    required this.label,
+    required this.textSecondary,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 12, height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              colors: [
+                Color.lerp(color, Colors.white, 0.25)!,
+                color,
+              ],
+              center: const Alignment(-0.3, -0.3),
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.4),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textSecondary)),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: textSecondary,
+          ),
+        ),
       ],
     );
   }

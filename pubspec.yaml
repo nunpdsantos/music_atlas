@@ -17,8 +17,12 @@ dependencies:
   # Fonts
   google_fonts: ^6.3.3
 
-  # UI
+  # UI & Animations
   cupertino_icons: ^1.0.8
+  flutter_animate: ^4.5.0
+  animations: ^2.0.11
+  shimmer: ^3.0.0
+  blur: ^4.0.0
 
 dev_dependencies:
   flutter_test:

@@ -1,25 +1,51 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/repository.dart';
+import '../core/persistence_service.dart';
 import '../data/models.dart';
-import 'theory_engine.dart';
+import '../data/repository.dart';
 import 'guitar_view_controller.dart';
+import 'theory_engine.dart';
 
 /// ------------------------------------------------------------
-/// 1) Repository & App init
+/// 1) Core Services & App Initialization
 /// ------------------------------------------------------------
+
+/// Singleton persistence service for saving/loading settings.
+final persistenceServiceProvider = Provider<PersistenceService>((ref) {
+  return PersistenceService();
+});
+
+/// Singleton repository for chord data access.
 final repositoryProvider = Provider<MusicRepository>((ref) => MusicRepository());
 
-/// Call this once (main.dart already watches it) so JSON data is loaded.
+/// Call this once (main.dart already watches it) to initialize all services.
+/// Loads JSON data and restores persisted settings.
 final appInitProvider = FutureProvider<void>((ref) async {
+  // Initialize persistence first
+  final persistence = ref.read(persistenceServiceProvider);
+  await persistence.initialize();
+
+  // Load chord repository
   await ref.read(repositoryProvider).initialize();
+
+  // Restore saved settings
+  final settings = ref.read(appSettingsProvider.notifier);
+  settings.loadFromPersistence(persistence);
+
+  // Restore last selected key
+  final circle = ref.read(circleProvider.notifier);
+  final lastKey = persistence.getLastSelectedKey();
+  circle.selectKey(lastKey);
 });
 
 /// ------------------------------------------------------------
 /// 2) Circle state (key selection + major/minor view)
 /// ------------------------------------------------------------
 final circleProvider =
-    StateNotifierProvider<CircleNotifier, CircleState>((ref) => CircleNotifier());
+    StateNotifierProvider<CircleNotifier, CircleState>((ref) {
+  final persistence = ref.watch(persistenceServiceProvider);
+  return CircleNotifier(persistence);
+});
 
 class CircleState {
   /// Always store the Major parent (e.g. "C")
@@ -55,10 +81,13 @@ class CircleState {
 }
 
 class CircleNotifier extends StateNotifier<CircleState> {
-  CircleNotifier() : super(CircleState());
+  CircleNotifier(this._persistence) : super(CircleState());
+
+  final PersistenceService? _persistence;
 
   void selectKey(String majorRoot) {
     state = state.copyWith(selectedMajorRoot: majorRoot, clearDegree: true);
+    _persistence?.setLastSelectedKey(majorRoot);
   }
 
   void setView(KeyView view) {
@@ -174,30 +203,50 @@ class AppSettings {
 }
 
 class AppSettingsNotifier extends StateNotifier<AppSettings> {
-  AppSettingsNotifier() : super(const AppSettings());
+  AppSettingsNotifier(this._persistence) : super(const AppSettings());
+
+  final PersistenceService? _persistence;
+
+  /// Load settings from persistence service.
+  /// Called during app initialization.
+  void loadFromPersistence(PersistenceService persistence) {
+    state = AppSettings(
+      isDarkMode: persistence.getDarkMode(),
+      isLeftHanded: persistence.getLeftHanded(),
+      defaultOctaves: persistence.getDefaultOctaves(),
+      showIntervalLabels: persistence.getShowIntervalLabels(),
+    );
+  }
 
   void setDarkMode(bool value) {
     state = state.copyWith(isDarkMode: value);
+    _persistence?.setDarkMode(value);
   }
 
   void setLeftHanded(bool value) {
     state = state.copyWith(isLeftHanded: value);
+    _persistence?.setLeftHanded(value);
   }
 
   void setDefaultOctaves(int value) {
-    state = state.copyWith(defaultOctaves: value.clamp(1, 2));
+    final clamped = value.clamp(1, 2);
+    state = state.copyWith(defaultOctaves: clamped);
+    _persistence?.setDefaultOctaves(clamped);
   }
 
   void setShowIntervalLabels(bool value) {
     state = state.copyWith(showIntervalLabels: value);
+    _persistence?.setShowIntervalLabels(value);
   }
 
   void reset() {
     state = const AppSettings();
+    _persistence?.clearAll();
   }
 }
 
-final appSettingsProvider = 
+final appSettingsProvider =
     StateNotifierProvider<AppSettingsNotifier, AppSettings>((ref) {
-  return AppSettingsNotifier();
+  final persistence = ref.watch(persistenceServiceProvider);
+  return AppSettingsNotifier(persistence);
 });

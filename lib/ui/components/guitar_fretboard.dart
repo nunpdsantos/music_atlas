@@ -471,7 +471,7 @@ class GuitarFretboardPainter extends CustomPainter {
 
   void _drawPremiumNote(Canvas canvas, Offset center, String label, int pc, int rootPc, bool isOpen) {
     int interval = (pc - rootPc + 12) % 12;
-    final color = AppTheme.getIntervalColor(interval);
+    final color = AppTheme.getIntervalColorForMode(interval, isDark);
     final bool isRoot = interval == 0;
 
     double radius = 14.0;

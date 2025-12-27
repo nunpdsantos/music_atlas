@@ -435,7 +435,7 @@ class _PremiumPianoPainter extends CustomPainter {
 
     final isRoot = (pc == rootPc);
     final interval = (pc - rootPc + 12) % 12;
-    final intervalColor = AppTheme.getIntervalColor(interval);
+    final intervalColor = AppTheme.getIntervalColorForMode(interval, isDark);
 
     final double radius = 12.0;
     final Rect markerRect = Rect.fromCircle(center: center, radius: radius);

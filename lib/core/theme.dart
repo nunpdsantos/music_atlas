@@ -41,6 +41,22 @@ class AppTheme {
     11: Color(0xFFD946EF),     // Major 7th
   };
 
+  // Dark mode optimized interval colors - softer, less harsh against dark backgrounds
+  static const Map<int, Color> intervalColorsDark = {
+    0: Color(0xFF60A5FA),      // Root / Unison - lighter blue
+    1: Color(0xFFFCA5A5),      // minor 2nd (b2) - softer red
+    2: Color(0xFFFDBA74),      // Major 2nd - softer orange
+    3: Color(0xFFFDE047),      // minor 3rd (b3) - softer yellow
+    4: Color(0xFFFCD34D),      // Major 3rd - softer amber
+    5: Color(0xFF86EFAC),      // Perfect 4th - softer green
+    6: Color(0xFF6EE7B7),      // Tritone (b5/#4) - softer emerald
+    7: Color(0xFF93C5FD),      // Perfect 5th - softer blue
+    8: Color(0xFFA5B4FC),      // minor 6th (b6) - softer indigo
+    9: Color(0xFFC4B5FD),      // Major 6th - softer violet
+    10: Color(0xFFD8B4FE),     // minor 7th (b7) - softer purple
+    11: Color(0xFFF0ABFC),     // Major 7th - softer fuchsia
+  };
+
   static const Map<int, String> intervalLabels = {
     0: 'Root',
     1: '♭2',
@@ -57,8 +73,18 @@ class AppTheme {
   };
 
   /// Get color for an interval (0-11 semitones from root)
-  static Color getIntervalColor(int interval) {
-    return intervalColors[interval % 12] ?? textSecondary;
+  /// If context is provided, returns dark-mode optimized colors when appropriate
+  static Color getIntervalColor(int interval, [BuildContext? context]) {
+    final isDarkMode = context != null && isDark(context);
+    final colors = isDarkMode ? intervalColorsDark : intervalColors;
+    return colors[interval % 12] ?? textSecondary;
+  }
+
+  /// Get color for an interval with explicit dark mode flag
+  /// Use this in CustomPainters or when context is not available
+  static Color getIntervalColorForMode(int interval, bool isDarkMode) {
+    final colors = isDarkMode ? intervalColorsDark : intervalColors;
+    return colors[interval % 12] ?? textSecondary;
   }
 
   /// Get label for an interval

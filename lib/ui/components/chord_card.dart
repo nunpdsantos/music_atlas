@@ -31,16 +31,14 @@ class ChordCard extends StatelessWidget {
     final borderColor = AppTheme.getBorderColor(context);
     final textPrimary = AppTheme.getTextPrimary(context);
     final textSecondary = AppTheme.getTextSecondary(context);
-    final majorLight = AppTheme.getMajorLight(context);
-    final minorLight = AppTheme.getMinorLight(context);
     final isDark = AppTheme.isDark(context);
 
-    // Determine chord quality colors from roman numeral or name
+    // Determine chord quality from roman numeral or name
     final safeRoman = roman ?? '';
-    final bool isDim = safeRoman.contains('°') || 
+    final bool isDim = safeRoman.contains('°') ||
         safeRoman.toLowerCase().contains('dim') ||
         name.contains('°') || name.toLowerCase().contains('dim');
-    final bool isAug = safeRoman.contains('+') || 
+    final bool isAug = safeRoman.contains('+') ||
         safeRoman.toLowerCase().contains('aug') ||
         name.contains('+');
     final bool isMinor = !isDim && !isAug && (
@@ -49,29 +47,16 @@ class ChordCard extends StatelessWidget {
     );
     final bool isMajor = !isDim && !isMinor && !isAug;
 
-    // Color scheme based on chord quality
-    Color badgeBg;
-    Color badgeText;
-
-    if (isDim) {
-      badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
-    } else if (isAug) {
-      badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
-    } else if (isMajor) {
-      badgeBg = majorLight;
-      badgeText = AppTheme.tonicBlue;
-    } else {
-      badgeBg = minorLight;
-      badgeText = AppTheme.minorAmber;
-    }
-
-    // Override colors for badge (transposer index)
-    if (badge != null) {
-      badgeBg = isDark ? const Color(0xFF334155) : Colors.grey[100]!;
-      badgeText = textSecondary;
-    }
+    // Get standardized chord quality colors
+    final (badgeBg, badgeText) = badge != null
+        ? (isDark ? const Color(0xFF334155) : Colors.grey[100]!, textSecondary)
+        : AppTheme.getChordQualityColors(
+            context,
+            isMajor: isMajor,
+            isMinor: isMinor,
+            isDim: isDim,
+            isAug: isAug,
+          );
 
     // Extract root for fretboard display
     String root = name.isNotEmpty ? name[0] : 'C';
@@ -187,32 +172,24 @@ class ChordCardGrid extends StatelessWidget {
     final borderColor = AppTheme.getBorderColor(context);
     final textPrimary = AppTheme.getTextPrimary(context);
     final textSecondary = AppTheme.getTextSecondary(context);
-    final majorLight = AppTheme.getMajorLight(context);
-    final minorLight = AppTheme.getMinorLight(context);
     final isDark = AppTheme.isDark(context);
 
+    // Determine chord quality from roman numeral
     final safeRoman = roman ?? '';
     final bool isDim = safeRoman.contains('°');
     final bool isAug = safeRoman.contains('+');
-    final bool isMajor = !isDim && !isAug && 
+    final bool isMajor = !isDim && !isAug &&
         (safeRoman.isNotEmpty && safeRoman[0] == safeRoman[0].toUpperCase());
+    final bool isMinor = !isDim && !isAug && !isMajor;
 
-    Color badgeBg;
-    Color badgeText;
-
-    if (isDim) {
-      badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
-    } else if (isAug) {
-      badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
-    } else if (isMajor) {
-      badgeBg = majorLight;
-      badgeText = AppTheme.tonicBlue;
-    } else {
-      badgeBg = minorLight;
-      badgeText = AppTheme.minorAmber;
-    }
+    // Get standardized chord quality colors
+    final (badgeBg, badgeText) = AppTheme.getChordQualityColors(
+      context,
+      isMajor: isMajor,
+      isMinor: isMinor,
+      isDim: isDim,
+      isAug: isAug,
+    );
 
     String root = name.isNotEmpty ? name[0] : 'C';
     if (name.length > 1 && (name[1] == '#' || name[1] == 'b')) {

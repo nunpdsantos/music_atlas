@@ -34,43 +34,26 @@ class ChordLabel extends ConsumerWidget {
     final borderColor = AppTheme.getBorderColor(context);
     final textPrimary = AppTheme.getTextPrimary(context);
     final textSecondary = AppTheme.getTextSecondary(context);
-    final majorLight = AppTheme.getMajorLight(context);
-    final minorLight = AppTheme.getMinorLight(context);
     final isDark = AppTheme.isDark(context);
 
-    // Safety check for Roman numeral logic - improved to handle augmented
+    // Determine chord quality from roman numeral
     final safeRoman = roman ?? '';
     final bool isDim = safeRoman.contains('°') || safeRoman.toLowerCase().contains('dim');
     final bool isAug = safeRoman.contains('+') || safeRoman.toLowerCase().contains('aug');
-    final bool isMinor = !isDim && !isAug && safeRoman.isNotEmpty && 
+    final bool isMinor = !isDim && !isAug && safeRoman.isNotEmpty &&
         safeRoman[0] == safeRoman[0].toLowerCase();
     final bool isMajor = !isDim && !isMinor && !isAug;
 
-    // Color logic with augmented support and dark mode
-    Color badgeBg;
-    Color badgeText;
-
-    if (isDim) {
-      badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE); 
-      badgeText = const Color(0xFFD32F2F);
-    } else if (isAug) {
-      // Purple for Augmented
-      badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
-    } else if (isMajor) {
-      badgeBg = majorLight;
-      badgeText = AppTheme.tonicBlue;
-    } else {
-      // Minor
-      badgeBg = minorLight;
-      badgeText = AppTheme.minorAmber;
-    }
-    
-    // If badge is manually provided (Transposer), override colors to Neutral/Grey
-    if (badge != null) {
-      badgeBg = isDark ? const Color(0xFF334155) : Colors.grey[200]!;
-      badgeText = textSecondary;
-    }
+    // Get standardized chord quality colors
+    final (badgeBg, badgeText) = badge != null
+        ? (isDark ? const Color(0xFF334155) : Colors.grey[200]!, textSecondary)
+        : AppTheme.getChordQualityColors(
+            context,
+            isMajor: isMajor,
+            isMinor: isMinor,
+            isDim: isDim,
+            isAug: isAug,
+          );
 
     return GestureDetector(
       onTap: () {

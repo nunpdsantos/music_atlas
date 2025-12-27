@@ -477,23 +477,14 @@ class _ChordResultCard extends StatelessWidget {
     final bool isMinor = !isDim && !isAug && (name.contains('m') && !name.contains('maj'));
     final bool isMajor = !isDim && !isMinor && !isAug;
 
-    // Color scheme based on chord quality
-    Color badgeBg;
-    Color badgeText;
-
-    if (isDim) {
-      badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
-    } else if (isAug) {
-      badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
-    } else if (isMajor) {
-      badgeBg = AppTheme.getMajorLight(context);
-      badgeText = AppTheme.tonicBlue;
-    } else {
-      badgeBg = AppTheme.getMinorLight(context);
-      badgeText = AppTheme.minorAmber;
-    }
+    // Get standardized chord quality colors
+    final (badgeBg, badgeText) = AppTheme.getChordQualityColors(
+      context,
+      isMajor: isMajor,
+      isMinor: isMinor,
+      isDim: isDim,
+      isAug: isAug,
+    );
 
     // Extract root for fretboard
     String root = chord.displayName.isNotEmpty ? chord.displayName[0] : 'C';

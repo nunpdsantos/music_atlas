@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Primary Brand Colors (from your reference)
   static const Color tonicBlue = Color(0xFF1D4ED8);
-  static const Color minorAmber = Color(0xFFA36D11);
+  static const Color minorAmber = Color(0xFFA36D11); // Legacy - use minorTeal instead
   static const Color accentRed = Color(0xFFBE123C);
 
   // Backgrounds
@@ -18,9 +18,37 @@ class AppTheme {
 
   // Tints
   static const Color majorLight = Color(0xFFE7F0FF);
-  static const Color minorLight = Color(0xFFFFF4D6);
+  static const Color minorLight = Color(0xFFE0F2F1); // Teal tint (was amber)
   static const Color blueMediumTint = Color(0xFFE0ECFF);
   static const Color amberMediumTint = Color(0xFFF7E3B2);
+
+  // ============================================
+  // CHORD QUALITY COLORS (standardized)
+  // ============================================
+
+  // Major chord colors (Blue)
+  static const Color majorBgLight = Color(0xFFE7F0FF);
+  static const Color majorBgDark = Color(0xFF1E3A5F);
+  static const Color majorTextLight = Color(0xFF1D4ED8);
+  static const Color majorTextDark = Color(0xFF60A5FA);
+
+  // Minor chord colors (Teal - cleaner than amber)
+  static const Color minorBgLight = Color(0xFFE0F2F1);
+  static const Color minorBgDark = Color(0xFF134E4A);
+  static const Color minorTextLight = Color(0xFF0D9488);
+  static const Color minorTextDark = Color(0xFF2DD4BF);
+
+  // Diminished chord colors (Red)
+  static const Color dimBgLight = Color(0xFFFFEBEE);
+  static const Color dimBgDark = Color(0xFF4A1515);
+  static const Color dimTextLight = Color(0xFFD32F2F);
+  static const Color dimTextDark = Color(0xFFF87171);
+
+  // Augmented chord colors (Purple)
+  static const Color augBgLight = Color(0xFFF3E8FF);
+  static const Color augBgDark = Color(0xFF2D1B4E);
+  static const Color augTextLight = Color(0xFF7C3AED);
+  static const Color augTextDark = Color(0xFFA78BFA);
 
   // ============================================
   // INTERVAL COLORS (for fretboard/piano visualization)
@@ -78,7 +106,7 @@ class AppTheme {
 
   // Tints for dark mode
   static const Color darkMajorLight = Color(0xFF1E3A5F);
-  static const Color darkMinorLight = Color(0xFF422006);
+  static const Color darkMinorLight = Color(0xFF134E4A); // Teal (was brown 0xFF422006)
 
   // ============================================
   // LIGHT THEME
@@ -198,9 +226,97 @@ class AppTheme {
 
   /// Get input fill color based on current theme
   static Color getInputFillColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark 
-        ? const Color(0xFF1E293B) 
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF1E293B)
         : const Color(0xFFF1F5F9);
+  }
+
+  // ============================================
+  // CHORD QUALITY COLOR HELPERS
+  // ============================================
+
+  /// Get background and text colors for a chord based on its quality
+  /// Returns (backgroundColor, textColor)
+  static (Color, Color) getChordQualityColors(BuildContext context, {
+    required bool isMajor,
+    required bool isMinor,
+    required bool isDim,
+    required bool isAug,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (isDim) {
+      return (
+        isDark ? dimBgDark : dimBgLight,
+        isDark ? dimTextDark : dimTextLight,
+      );
+    } else if (isAug) {
+      return (
+        isDark ? augBgDark : augBgLight,
+        isDark ? augTextDark : augTextLight,
+      );
+    } else if (isMinor) {
+      return (
+        isDark ? minorBgDark : minorBgLight,
+        isDark ? minorTextDark : minorTextLight,
+      );
+    } else {
+      // Major (default)
+      return (
+        isDark ? majorBgDark : majorBgLight,
+        isDark ? majorTextDark : majorTextLight,
+      );
+    }
+  }
+
+  /// Get major chord colors based on theme
+  static (Color, Color) getMajorChordColors(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return (
+      isDark ? majorBgDark : majorBgLight,
+      isDark ? majorTextDark : majorTextLight,
+    );
+  }
+
+  /// Get minor chord colors based on theme
+  static (Color, Color) getMinorChordColors(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return (
+      isDark ? minorBgDark : minorBgLight,
+      isDark ? minorTextDark : minorTextLight,
+    );
+  }
+
+  /// Get diminished chord colors based on theme
+  static (Color, Color) getDimChordColors(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return (
+      isDark ? dimBgDark : dimBgLight,
+      isDark ? dimTextDark : dimTextLight,
+    );
+  }
+
+  /// Get augmented chord colors based on theme
+  static (Color, Color) getAugChordColors(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return (
+      isDark ? augBgDark : augBgLight,
+      isDark ? augTextDark : augTextLight,
+    );
+  }
+
+  /// Get major text color based on theme (for scale notes, borders, etc.)
+  static Color getMajorTextColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? majorTextDark
+        : majorTextLight;
+  }
+
+  /// Get minor text color based on theme (for scale notes, borders, etc.)
+  static Color getMinorTextColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? minorTextDark
+        : minorTextLight;
   }
 
   // ============================================

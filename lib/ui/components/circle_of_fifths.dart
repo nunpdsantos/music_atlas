@@ -13,6 +13,8 @@ class InteractiveCircle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(circleProvider);
     final isDark = AppTheme.isDark(context);
+    final majorTextColor = AppTheme.getMajorTextColor(context);
+    final minorTextColor = AppTheme.getMinorTextColor(context);
 
     return AspectRatio(
       aspectRatio: 1,
@@ -26,6 +28,8 @@ class InteractiveCircle extends ConsumerWidget {
                 selectedMajor: state.selectedMajorRoot,
                 view: state.view,
                 isDark: isDark,
+                majorTextColor: majorTextColor,
+                minorTextColor: minorTextColor,
               ),
             ),
           );
@@ -69,11 +73,15 @@ class DualCirclePainter extends CustomPainter {
   final String selectedMajor;
   final KeyView view;
   final bool isDark;
-  
+  final Color majorTextColor;
+  final Color minorTextColor;
+
   DualCirclePainter({
-    required this.selectedMajor, 
+    required this.selectedMajor,
     required this.view,
     this.isDark = false,
+    required this.majorTextColor,
+    required this.minorTextColor,
   });
 
   @override
@@ -161,12 +169,12 @@ class DualCirclePainter extends CustomPainter {
       final rMajText = (rOuter + rDivider) / 2;
       final rMinText = (rDivider + rInner) / 2;
       
-      Color majTextColor = isPairActive 
-          ? (view == KeyView.major ? AppTheme.tonicBlue : AppTheme.tonicBlue.withOpacity(0.6)) 
+      Color majTextColor = isPairActive
+          ? (view == KeyView.major ? majorTextColor : majorTextColor.withOpacity(0.6))
           : textPrimary;
-      
-      Color minTextColor = isPairActive 
-          ? (view == KeyView.relativeMinor ? AppTheme.minorAmber : AppTheme.minorAmber.withOpacity(0.7)) 
+
+      Color minTextColor = isPairActive
+          ? (view == KeyView.relativeMinor ? minorTextColor : minorTextColor.withOpacity(0.7))
           : textSecondary;
 
       // Major Text

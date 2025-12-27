@@ -29,8 +29,8 @@ class CircleScreen extends ConsumerWidget {
     final minorLight = AppTheme.getMinorLight(context);
 
     final scaleBg = isMajor ? majorLight : minorLight;
-    final scaleText = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
-    final scaleBorder = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+    final scaleText = isMajor ? AppTheme.getMajorTextColor(context) : AppTheme.getMinorTextColor(context);
+    final scaleBorder = isMajor ? AppTheme.getMajorTextColor(context) : AppTheme.getMinorTextColor(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -203,7 +203,7 @@ class _CurrentKeyCard extends StatelessWidget {
     final root = state.selectedMajorRoot;
     final relMinor = TheoryEngine.kRelativeMinors[root] ?? '?';
 
-    final activeColor = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+    final activeColor = isMajor ? AppTheme.getMajorTextColor(context) : AppTheme.getMinorTextColor(context);
     
     // Theme-aware colors
     final cardBg = AppTheme.getCardBg(context);
@@ -313,7 +313,7 @@ class _CurrentKeyCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: !isMajor ? AppTheme.minorAmber : textSecondary,
+                            color: !isMajor ? AppTheme.getMinorTextColor(context) : textSecondary,
                           ),
                         ),
                       ),
@@ -388,7 +388,7 @@ class _MinorTypeSelector extends StatelessWidget {
               child: Container(
                 alignment: Alignment.center,
                 decoration: BoxDecoration(color: isActive ? minorLight : Colors.transparent, borderRadius: BorderRadius.circular(18)),
-                child: Text(type.name[0].toUpperCase() + type.name.substring(1), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive ? AppTheme.minorAmber : textSecondary)),
+                child: Text(type.name[0].toUpperCase() + type.name.substring(1), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive ? AppTheme.getMinorTextColor(context) : textSecondary)),
               ),
             ),
           );

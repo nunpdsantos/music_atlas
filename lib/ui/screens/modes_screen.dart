@@ -46,8 +46,8 @@ class _ModesScreenState extends State<ModesScreen> {
 
     // Dynamic Colors for the Scale Row
     final Color noteBg = isMajor ? majorLight : minorLight;
-    final Color noteTxt = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
-    final Color noteBorder = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+    final Color noteTxt = isMajor ? AppTheme.getMajorTextColor(context) : AppTheme.getMinorTextColor(context);
+    final Color noteBorder = isMajor ? AppTheme.getMajorTextColor(context) : AppTheme.getMinorTextColor(context);
 
     return Scaffold(
       backgroundColor: scaffoldBg,
@@ -133,7 +133,7 @@ class _ModesScreenState extends State<ModesScreen> {
               
               final isMajorFamily = chars['family'] == 'Major';
               final cardColor = isMajorFamily ? majorLight : minorLight;
-              final textColor = isMajorFamily ? AppTheme.tonicBlue : AppTheme.minorAmber;
+              final textColor = isMajorFamily ? AppTheme.getMajorTextColor(context) : AppTheme.getMinorTextColor(context);
               
               return Container(
                 width: double.infinity,

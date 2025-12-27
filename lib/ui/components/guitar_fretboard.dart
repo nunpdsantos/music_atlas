@@ -44,16 +44,43 @@ class GuitarFretboard extends StatefulWidget {
   State<GuitarFretboard> createState() => _GuitarFretboardState();
 }
 
-class _GuitarFretboardState extends State<GuitarFretboard> {
+class _GuitarFretboardState extends State<GuitarFretboard> with SingleTickerProviderStateMixin {
   late ScrollController _scrollController;
 
   // Standard guitar tuning MIDI notes: E2, A2, D3, G3, B3, E4
   static const List<int> _openStringMidi = [40, 45, 50, 55, 59, 64];
 
+  /// Currently vibrating string index (-1 for none, 0-5 for strings)
+  int _vibratingString = -1;
+
+  /// Animation controller for string vibration
+  late AnimationController _vibrationController;
+
   @override
   void initState() {
     super.initState();
     _scrollController = widget.scrollController ?? ScrollController();
+    _vibrationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _vibrationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() => _vibratingString = -1);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _vibrationController.dispose();
+    super.dispose();
+  }
+
+  /// Trigger string vibration animation
+  void _triggerVibration(int stringIndex) {
+    setState(() => _vibratingString = stringIndex);
+    _vibrationController.forward(from: 0);
   }
 
   /// Handle tap on the fretboard and determine which note was pressed.
@@ -97,6 +124,8 @@ class _GuitarFretboardState extends State<GuitarFretboard> {
       if (widget.enableHaptics) {
         HapticFeedback.lightImpact();
       }
+      // Trigger string vibration animation
+      _triggerVibration(stringIndex);
       widget.onNoteTap?.call(noteName, pitchClass, stringIndex, fret);
     }
   }
@@ -125,20 +154,27 @@ class _GuitarFretboardState extends State<GuitarFretboard> {
           onTapDown: widget.onNoteTap != null
               ? (details) => _handleTap(details.localPosition, contentWidth, nutPadding)
               : null,
-          child: SizedBox(
-            width: contentWidth,
-            height: widget.height,
-            child: CustomPaint(
-              painter: GuitarFretboardPainter(
-                tones: widget.tones,
-                root: widget.root,
-                leftHanded: widget.leftHanded,
-                fretWidth: widget.fretWidth,
-                totalFrets: widget.totalFrets,
-                nutPadding: nutPadding,
-                isDark: isDark,
-              ),
-            ),
+          child: AnimatedBuilder(
+            animation: _vibrationController,
+            builder: (context, child) {
+              return SizedBox(
+                width: contentWidth,
+                height: widget.height,
+                child: CustomPaint(
+                  painter: GuitarFretboardPainter(
+                    tones: widget.tones,
+                    root: widget.root,
+                    leftHanded: widget.leftHanded,
+                    fretWidth: widget.fretWidth,
+                    totalFrets: widget.totalFrets,
+                    nutPadding: nutPadding,
+                    isDark: isDark,
+                    vibratingString: _vibratingString,
+                    vibrationAmount: _vibrationController.value,
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -154,6 +190,8 @@ class GuitarFretboardPainter extends CustomPainter {
   final int totalFrets;
   final double nutPadding;
   final bool isDark;
+  final int vibratingString;
+  final double vibrationAmount;
 
   GuitarFretboardPainter({
     required this.tones,
@@ -163,6 +201,8 @@ class GuitarFretboardPainter extends CustomPainter {
     required this.totalFrets,
     required this.nutPadding,
     required this.isDark,
+    this.vibratingString = -1,
+    this.vibrationAmount = 0.0,
   });
 
   static const List<int> _openStringMidi = [40, 45, 50, 55, 59, 64]; // E A D G B E
@@ -461,45 +501,165 @@ class GuitarFretboardPainter extends CustomPainter {
       // String thickness: bass strings are wound (thicker), treble are plain
       double thickness = 1.2 + (5 - s) * 0.5;
       bool isWound = s < 3; // E, A, D are wound strings
+      bool isVibrating = s == vibratingString && vibrationAmount > 0;
 
-      // String shadow
-      canvas.drawLine(
-        Offset(0, y + 1),
-        Offset(size.width, y + 1),
-        Paint()
-          ..color = Colors.black.withOpacity(0.2)
-          ..strokeWidth = thickness,
-      );
-
-      if (isWound) {
-        // Wound string: darker bronze/nickel color with texture
-        final Paint woundPaint = Paint()
-          ..color = isDark
-            ? const Color(0xFF8B7355)
-            : const Color(0xFF9C8468)
-          ..strokeWidth = thickness;
-        canvas.drawLine(Offset(0, y), Offset(size.width, y), woundPaint);
-
-        // Wound texture pattern (subtle)
-        final Paint woundHighlight = Paint()
-          ..color = Colors.white.withOpacity(0.15)
-          ..strokeWidth = thickness * 0.3;
-        canvas.drawLine(Offset(0, y - thickness * 0.2), Offset(size.width, y - thickness * 0.2), woundHighlight);
+      if (isVibrating) {
+        // Draw vibrating string with wave effect
+        _drawVibratingString(canvas, size, y, thickness, isWound, s);
       } else {
-        // Plain steel string: bright silver with highlight
-        final Paint steelBase = Paint()
-          ..color = isDark
-            ? const Color(0xFFB0B0B0)
-            : const Color(0xFFC4C4C4)
-          ..strokeWidth = thickness;
-        canvas.drawLine(Offset(0, y), Offset(size.width, y), steelBase);
-
-        // Specular highlight
-        final Paint steelHighlight = Paint()
-          ..color = Colors.white.withOpacity(0.4)
-          ..strokeWidth = thickness * 0.3;
-        canvas.drawLine(Offset(0, y - thickness * 0.25), Offset(size.width, y - thickness * 0.25), steelHighlight);
+        // Draw normal static string
+        _drawStaticString(canvas, size, y, thickness, isWound);
       }
+    }
+  }
+
+  void _drawStaticString(Canvas canvas, Size size, double y, double thickness, bool isWound) {
+    // String shadow
+    canvas.drawLine(
+      Offset(0, y + 1),
+      Offset(size.width, y + 1),
+      Paint()
+        ..color = Colors.black.withOpacity(0.2)
+        ..strokeWidth = thickness,
+    );
+
+    if (isWound) {
+      // Wound string: darker bronze/nickel color with texture
+      final Paint woundPaint = Paint()
+        ..color = isDark
+          ? const Color(0xFF8B7355)
+          : const Color(0xFF9C8468)
+        ..strokeWidth = thickness;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), woundPaint);
+
+      // Wound texture pattern (subtle)
+      final Paint woundHighlight = Paint()
+        ..color = Colors.white.withOpacity(0.15)
+        ..strokeWidth = thickness * 0.3;
+      canvas.drawLine(Offset(0, y - thickness * 0.2), Offset(size.width, y - thickness * 0.2), woundHighlight);
+    } else {
+      // Plain steel string: bright silver with highlight
+      final Paint steelBase = Paint()
+        ..color = isDark
+          ? const Color(0xFFB0B0B0)
+          : const Color(0xFFC4C4C4)
+        ..strokeWidth = thickness;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), steelBase);
+
+      // Specular highlight
+      final Paint steelHighlight = Paint()
+        ..color = Colors.white.withOpacity(0.4)
+        ..strokeWidth = thickness * 0.3;
+      canvas.drawLine(Offset(0, y - thickness * 0.25), Offset(size.width, y - thickness * 0.25), steelHighlight);
+    }
+  }
+
+  void _drawVibratingString(Canvas canvas, Size size, double baseY, double thickness, bool isWound, int stringIndex) {
+    // Calculate vibration amplitude that decays over time
+    // Using a decay envelope: starts strong, fades out
+    final decay = 1.0 - vibrationAmount; // 0 -> 1 as animation progresses
+    final decayedAmplitude = 4.0 * math.pow(decay, 0.5) * (1.0 - vibrationAmount);
+
+    // Higher frequency for treble strings, lower for bass
+    final frequency = 8.0 + (5 - stringIndex) * 2.0;
+
+    // Create path for vibrating string
+    final path = Path();
+    final shadowPath = Path();
+
+    // String paint
+    final Color stringColor = isWound
+        ? (isDark ? const Color(0xFF8B7355) : const Color(0xFF9C8468))
+        : (isDark ? const Color(0xFFB0B0B0) : const Color(0xFFC4C4C4));
+
+    // Draw string as a wavy path
+    const int segments = 100;
+    final segmentWidth = size.width / segments;
+
+    for (int i = 0; i <= segments; i++) {
+      final x = i * segmentWidth;
+      // Sine wave with decay toward the ends (fixed at nut and bridge)
+      final endDecay = math.sin((i / segments) * math.pi); // 0 at ends, 1 in middle
+      final phase = vibrationAmount * math.pi * 20; // Fast phase animation
+      final waveY = math.sin(x / size.width * math.pi * frequency + phase) * decayedAmplitude * endDecay;
+
+      final y = baseY + waveY;
+      final shadowY = baseY + waveY + 1;
+
+      if (i == 0) {
+        path.moveTo(x, y);
+        shadowPath.moveTo(x, shadowY);
+      } else {
+        path.lineTo(x, y);
+        shadowPath.lineTo(x, shadowY);
+      }
+    }
+
+    // Draw shadow
+    canvas.drawPath(
+      shadowPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = Colors.black.withOpacity(0.2)
+        ..strokeWidth = thickness,
+    );
+
+    // Draw main string
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = stringColor
+        ..strokeWidth = thickness
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Draw highlight for wound strings
+    if (isWound) {
+      final highlightPath = Path();
+      for (int i = 0; i <= segments; i++) {
+        final x = i * segmentWidth;
+        final endDecay = math.sin((i / segments) * math.pi);
+        final phase = vibrationAmount * math.pi * 20;
+        final waveY = math.sin(x / size.width * math.pi * frequency + phase) * decayedAmplitude * endDecay;
+        final y = baseY + waveY - thickness * 0.2;
+
+        if (i == 0) {
+          highlightPath.moveTo(x, y);
+        } else {
+          highlightPath.lineTo(x, y);
+        }
+      }
+      canvas.drawPath(
+        highlightPath,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..color = Colors.white.withOpacity(0.15)
+          ..strokeWidth = thickness * 0.3,
+      );
+    } else {
+      // Specular highlight for steel strings
+      final highlightPath = Path();
+      for (int i = 0; i <= segments; i++) {
+        final x = i * segmentWidth;
+        final endDecay = math.sin((i / segments) * math.pi);
+        final phase = vibrationAmount * math.pi * 20;
+        final waveY = math.sin(x / size.width * math.pi * frequency + phase) * decayedAmplitude * endDecay;
+        final y = baseY + waveY - thickness * 0.25;
+
+        if (i == 0) {
+          highlightPath.moveTo(x, y);
+        } else {
+          highlightPath.lineTo(x, y);
+        }
+      }
+      canvas.drawPath(
+        highlightPath,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..color = Colors.white.withOpacity(0.4)
+          ..strokeWidth = thickness * 0.3,
+      );
     }
   }
 
@@ -646,6 +806,8 @@ class GuitarFretboardPainter extends CustomPainter {
     if (oldDelegate.fretWidth != fretWidth) return true;
     if (oldDelegate.isDark != isDark) return true;
     if (oldDelegate.tones.length != tones.length) return true;
+    if (oldDelegate.vibratingString != vibratingString) return true;
+    if (oldDelegate.vibrationAmount != vibrationAmount) return true;
 
     for (int i = 0; i < tones.length; i++) {
       if (oldDelegate.tones[i] != tones[i]) return true;

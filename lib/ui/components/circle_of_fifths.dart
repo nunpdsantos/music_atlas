@@ -1,59 +1,119 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../logic/providers.dart';
 import '../../logic/theory_engine.dart';
 import '../../core/theme.dart';
 
-class InteractiveCircle extends ConsumerWidget {
+class InteractiveCircle extends ConsumerStatefulWidget {
   const InteractiveCircle({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(circleProvider);
-    final isDark = AppTheme.isDark(context);
+  ConsumerState<InteractiveCircle> createState() => _InteractiveCircleState();
+}
 
-    // Build semantic label for screen readers
-    final isMajor = state.view == KeyView.major;
-    final relMinor = TheoryEngine.kRelativeMinors[state.selectedMajorRoot] ?? '';
-    final currentKey = isMajor
-        ? '${state.selectedMajorRoot} Major'
-        : '${relMinor} minor';
-    final semanticLabel = 'Circle of Fifths. Currently selected: $currentKey. '
-        'Tap outer ring for major keys, inner ring for minor keys.';
+class _InteractiveCircleState extends ConsumerState<InteractiveCircle>
+    with SingleTickerProviderStateMixin {
+  /// Current rotation offset in radians (for drag interaction)
+  double _rotationOffset = 0.0;
 
-    return Semantics(
-      label: semanticLabel,
-      hint: 'Double tap to select a key',
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return GestureDetector(
-              onTapUp: (details) => _handleTap(context, ref, details, constraints.maxWidth),
-              child: CustomPaint(
-                size: Size(constraints.maxWidth, constraints.maxWidth),
-                painter: DualCirclePainter(
-                  selectedMajor: state.selectedMajorRoot,
-                  view: state.view,
-                  isDark: isDark,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
+  /// Animation controller for spring physics
+  late AnimationController _springController;
+
+  /// Velocity tracking for fling gestures
+  double _lastAngularVelocity = 0.0;
+
+  /// Whether we're currently dragging
+  bool _isDragging = false;
+
+  /// Last drag angle for velocity calculation
+  double? _lastDragAngle;
+
+  @override
+  void initState() {
+    super.initState();
+    _springController = AnimationController(vsync: this);
+    _springController.addListener(_onSpringUpdate);
   }
 
-  void _handleTap(BuildContext context, WidgetRef ref, TapUpDetails details, double size) {
+  @override
+  void dispose() {
+    _springController.dispose();
+    super.dispose();
+  }
+
+  void _onSpringUpdate() {
+    setState(() {
+      _rotationOffset = _springController.value;
+    });
+  }
+
+  /// Calculate angle from center to a point
+  double _angleFromCenter(Offset point, Offset center) {
+    return math.atan2(point.dy - center.dy, point.dx - center.dx);
+  }
+
+  /// Snap rotation to nearest key position
+  void _snapToNearestKey() {
+    final step = 2 * math.pi / 12;
+    // Find the nearest snap position
+    final snappedOffset = ((_rotationOffset / step).round() * step) % (2 * math.pi);
+
+    // Use spring physics to animate to snapped position
+    final spring = SpringDescription(
+      mass: 1.0,
+      stiffness: 200.0,
+      damping: 20.0,
+    );
+
+    final simulation = SpringSimulation(spring, _rotationOffset, snappedOffset, _lastAngularVelocity);
+
+    _springController.animateWith(simulation);
+  }
+
+  /// Handle pan start
+  void _onPanStart(DragStartDetails details, Offset center) {
+    _springController.stop();
+    _isDragging = true;
+    _lastDragAngle = _angleFromCenter(details.localPosition, center);
+  }
+
+  /// Handle pan update
+  void _onPanUpdate(DragUpdateDetails details, Offset center) {
+    if (!_isDragging) return;
+
+    final currentAngle = _angleFromCenter(details.localPosition, center);
+    if (_lastDragAngle != null) {
+      var delta = currentAngle - _lastDragAngle!;
+      // Handle wrap-around
+      if (delta > math.pi) delta -= 2 * math.pi;
+      if (delta < -math.pi) delta += 2 * math.pi;
+
+      setState(() {
+        _rotationOffset += delta;
+        _lastAngularVelocity = delta * 60; // Approximate velocity
+      });
+    }
+    _lastDragAngle = currentAngle;
+  }
+
+  /// Handle pan end
+  void _onPanEnd(DragEndDetails details) {
+    _isDragging = false;
+    _lastDragAngle = null;
+    _snapToNearestKey();
+  }
+
+  void _handleTap(TapUpDetails details, double size) {
     final center = Offset(size / 2, size / 2);
     final dx = details.localPosition.dx - center.dx;
     final dy = details.localPosition.dy - center.dy;
     final dist = math.sqrt(dx*dx + dy*dy);
-    
-    final ang = (math.atan2(dy, dx) + 2.5 * math.pi) % (2 * math.pi);
+
+    // Account for rotation offset when calculating angle
+    final ang = (math.atan2(dy, dx) + 2.5 * math.pi - _rotationOffset) % (2 * math.pi);
     final step = 2 * math.pi / 12;
     int idx = (ang / step).round() % 12;
     final key = TheoryEngine.kCircleMajClock[idx];
@@ -76,17 +136,63 @@ class InteractiveCircle extends ConsumerWidget {
        notifier.setView(KeyView.relativeMinor);
     }
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(circleProvider);
+    final isDark = AppTheme.isDark(context);
+
+    // Build semantic label for screen readers
+    final isMajor = state.view == KeyView.major;
+    final relMinor = TheoryEngine.kRelativeMinors[state.selectedMajorRoot] ?? '';
+    final currentKey = isMajor
+        ? '${state.selectedMajorRoot} Major'
+        : '${relMinor} minor';
+    final semanticLabel = 'Circle of Fifths. Currently selected: $currentKey. '
+        'Tap outer ring for major keys, inner ring for minor keys. '
+        'Drag to rotate the circle.';
+
+    return Semantics(
+      label: semanticLabel,
+      hint: 'Double tap to select a key, or drag to rotate',
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final center = Offset(constraints.maxWidth / 2, constraints.maxWidth / 2);
+            return GestureDetector(
+              onTapUp: (details) => _handleTap(details, constraints.maxWidth),
+              onPanStart: (details) => _onPanStart(details, center),
+              onPanUpdate: (details) => _onPanUpdate(details, center),
+              onPanEnd: _onPanEnd,
+              child: CustomPaint(
+                size: Size(constraints.maxWidth, constraints.maxWidth),
+                painter: DualCirclePainter(
+                  selectedMajor: state.selectedMajorRoot,
+                  view: state.view,
+                  isDark: isDark,
+                  rotationOffset: _rotationOffset,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
 class DualCirclePainter extends CustomPainter {
   final String selectedMajor;
   final KeyView view;
   final bool isDark;
-  
+  final double rotationOffset;
+
   DualCirclePainter({
-    required this.selectedMajor, 
+    required this.selectedMajor,
     required this.view,
     this.isDark = false,
+    this.rotationOffset = 0.0,
   });
 
   @override
@@ -94,7 +200,8 @@ class DualCirclePainter extends CustomPainter {
     final center = size.center(Offset.zero);
     final n = TheoryEngine.kCircleMajClock.length;
     final step = 2 * math.pi / n;
-    final base = -math.pi / 2;
+    // Apply rotation offset to the base angle
+    final base = -math.pi / 2 + rotationOffset;
 
     // Dimensions
     final rOuter = size.shortestSide * 0.48; 
@@ -200,8 +307,9 @@ class DualCirclePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant DualCirclePainter old) => 
-      old.selectedMajor != selectedMajor || 
-      old.view != view || 
-      old.isDark != isDark;
+  bool shouldRepaint(covariant DualCirclePainter old) =>
+      old.selectedMajor != selectedMajor ||
+      old.view != view ||
+      old.isDark != isDark ||
+      old.rotationOffset != rotationOffset;
 }

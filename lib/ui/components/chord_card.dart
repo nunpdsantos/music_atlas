@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme.dart';
 import 'interactive_fretboard_sheet.dart';
 
 /// Unified compact chord card used across all screens.
-/// Designed to be space-efficient while maintaining visual clarity.
+/// Modern design with smooth animations and haptic feedback.
 class ChordCard extends StatelessWidget {
   final String name;
   final List<String> notes;
@@ -26,7 +27,6 @@ class ChordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Theme-aware colors
     final cardBg = AppTheme.getCardBg(context);
     final borderColor = AppTheme.getBorderColor(context);
     final textPrimary = AppTheme.getTextPrimary(context);
@@ -35,12 +35,12 @@ class ChordCard extends StatelessWidget {
     final minorLight = AppTheme.getMinorLight(context);
     final isDark = AppTheme.isDark(context);
 
-    // Determine chord quality colors from roman numeral or name
+    // Determine chord quality colors
     final safeRoman = roman ?? '';
-    final bool isDim = safeRoman.contains('°') || 
+    final bool isDim = safeRoman.contains('°') ||
         safeRoman.toLowerCase().contains('dim') ||
         name.contains('°') || name.toLowerCase().contains('dim');
-    final bool isAug = safeRoman.contains('+') || 
+    final bool isAug = safeRoman.contains('+') ||
         safeRoman.toLowerCase().contains('aug') ||
         name.contains('+');
     final bool isMinor = !isDim && !isAug && (
@@ -49,16 +49,15 @@ class ChordCard extends StatelessWidget {
     );
     final bool isMajor = !isDim && !isMinor && !isAug;
 
-    // Color scheme based on chord quality
     Color badgeBg;
     Color badgeText;
 
     if (isDim) {
       badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
+      badgeText = AppTheme.accentRed;
     } else if (isAug) {
       badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
+      badgeText = AppTheme.accentPurple;
     } else if (isMajor) {
       badgeBg = majorLight;
       badgeText = AppTheme.tonicBlue;
@@ -80,79 +79,101 @@ class ChordCard extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: onTap ?? () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => InteractiveFretboardSheet(
-            chordName: name,
-            tones: notes,
-            root: root,
-          ),
-        );
+      onTap: () {
+        HapticFeedback.lightImpact();
+        if (onTap != null) {
+          onTap!();
+        } else {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => InteractiveFretboardSheet(
+              chordName: name,
+              tones: notes,
+              root: root,
+            ),
+          );
+        }
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: AppTheme.durationFast,
+        curve: AppTheme.curveEaseOut,
         width: width,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: cardBg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
           border: Border.all(color: borderColor),
-          boxShadow: isDark ? [] : [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: AppTheme.getShadow(context, size: 'sm'),
         ),
         child: Row(
           children: [
             // Chord name badge
             Container(
-              constraints: const BoxConstraints(minWidth: 44),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              constraints: const BoxConstraints(minWidth: 54),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: badgeBg,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
               child: Text(
                 name,
                 style: TextStyle(
                   color: badgeText,
                   fontWeight: FontWeight.w700,
-                  fontSize: 14,
+                  fontSize: 15,
                 ),
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            
-            const SizedBox(width: 10),
-            
+
+            const SizedBox(width: 12),
+
             // Notes display
             Expanded(
-              child: Text(
-                notes.join(' • '),
-                style: TextStyle(
-                  color: textPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    notes.join(' • '),
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "${notes.length} notes",
+                    style: TextStyle(
+                      color: textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
               ),
             ),
-            
+
             // Roman numeral or badge (optional)
             if (roman != null || badge != null) ...[
               const SizedBox(width: 8),
-              Text(
-                badge ?? roman!,
-                style: TextStyle(
-                  color: textSecondary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.getScaffoldBg(context),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                ),
+                child: Text(
+                  badge ?? roman!,
+                  style: TextStyle(
+                    color: textSecondary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],
@@ -182,7 +203,6 @@ class ChordCardGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Theme-aware colors
     final cardBg = AppTheme.getCardBg(context);
     final borderColor = AppTheme.getBorderColor(context);
     final textPrimary = AppTheme.getTextPrimary(context);
@@ -194,7 +214,7 @@ class ChordCardGrid extends StatelessWidget {
     final safeRoman = roman ?? '';
     final bool isDim = safeRoman.contains('°');
     final bool isAug = safeRoman.contains('+');
-    final bool isMajor = !isDim && !isAug && 
+    final bool isMajor = !isDim && !isAug &&
         (safeRoman.isNotEmpty && safeRoman[0] == safeRoman[0].toUpperCase());
 
     Color badgeBg;
@@ -202,10 +222,10 @@ class ChordCardGrid extends StatelessWidget {
 
     if (isDim) {
       badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
+      badgeText = AppTheme.accentRed;
     } else if (isAug) {
       badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
+      badgeText = AppTheme.accentPurple;
     } else if (isMajor) {
       badgeBg = majorLight;
       badgeText = AppTheme.tonicBlue;
@@ -220,32 +240,33 @@ class ChordCardGrid extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: onTap ?? () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => InteractiveFretboardSheet(
-            chordName: name,
-            tones: notes,
-            root: root,
-          ),
-        );
+      onTap: () {
+        HapticFeedback.lightImpact();
+        if (onTap != null) {
+          onTap!();
+        } else {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => InteractiveFretboardSheet(
+              chordName: name,
+              tones: notes,
+              root: root,
+            ),
+          );
+        }
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: AppTheme.durationFast,
+        curve: AppTheme.curveEaseOut,
         width: width,
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: cardBg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
           border: Border.all(color: borderColor),
-          boxShadow: isDark ? [] : [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: AppTheme.getShadow(context, size: 'sm'),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -261,7 +282,7 @@ class ChordCardGrid extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: badgeBg,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                     ),
                     child: Text(
                       name,
@@ -274,25 +295,30 @@ class ChordCardGrid extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 // Roman numeral
                 if (safeRoman.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
+                  Container(
+                    margin: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.getScaffoldBg(context),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusXs),
+                    ),
                     child: Text(
                       safeRoman,
                       style: TextStyle(
                         color: textSecondary,
                         fontWeight: FontWeight.w600,
-                        fontSize: 12,
+                        fontSize: 11,
                       ),
                     ),
                   ),
               ],
             ),
-            
+
             const SizedBox(height: 10),
-            
+
             // Notes display
             Text(
               notes.join(' • '),

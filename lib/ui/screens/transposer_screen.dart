@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
 import '../../logic/providers.dart';
@@ -22,7 +23,7 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
   int _prevLength = 0;
 
   String fromKey = "C";
-  String toKey = "C";
+  String toKey = "G";
 
   @override
   void initState() {
@@ -40,9 +41,9 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
   }
 
   void _setAccidentalMode(AccidentalMode newMode) {
+    HapticFeedback.selectionClick();
     final text = _controller.text;
-    
-    // If text is empty, just set mode for next typed character
+
     if (text.isEmpty) {
       setState(() {
         _mode = (_mode == newMode) ? AccidentalMode.none : newMode;
@@ -50,11 +51,9 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
       _focusNode.requestFocus();
       return;
     }
-    
-    // Get the accidental character
+
     final accChar = newMode == AccidentalMode.flat ? 'b' : '#';
-    
-    // Find the last note letter in the text (accounting for spaces between chords)
+
     int lastNoteIndex = -1;
     for (int i = text.length - 1; i >= 0; i--) {
       if (RegExp(r'[a-gA-G]').hasMatch(text[i])) {
@@ -62,14 +61,12 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
         break;
       }
     }
-    
+
     if (lastNoteIndex >= 0) {
-      // Check if there's already an accidental after this note
       final afterNoteIndex = lastNoteIndex + 1;
       if (afterNoteIndex < text.length) {
         final charAfterNote = text[afterNoteIndex];
         if (charAfterNote == '#' || charAfterNote == 'b' || charAfterNote == '♯' || charAfterNote == '♭') {
-          // Replace existing accidental
           final newText = text.replaceRange(afterNoteIndex, afterNoteIndex + 1, accChar);
           _controller.value = TextEditingValue(
             text: newText,
@@ -81,8 +78,7 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
           return;
         }
       }
-      
-      // Insert accidental after the last note letter
+
       final insertAt = lastNoteIndex + 1;
       final newText = text.substring(0, insertAt) + accChar + text.substring(insertAt);
       _controller.value = TextEditingValue(
@@ -92,53 +88,15 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
       _prevLength = newText.length;
       setState(() => _mode = AccidentalMode.none);
     } else {
-      // No note found, just toggle mode
       setState(() {
         _mode = (_mode == newMode) ? AccidentalMode.none : newMode;
       });
     }
     _focusNode.requestFocus();
   }
-  
-  void _insertAccidental(String accChar) {
-    final text = _controller.text;
-    final selection = _controller.selection;
-    
-    // Find insertion point
-    int insertAt = text.length; // default to end
-    if (selection.isValid && selection.baseOffset >= 0) {
-      insertAt = selection.baseOffset;
-    }
-    
-    // Check if we should replace an existing accidental
-    if (insertAt > 0) {
-      final charBefore = text.substring(insertAt - 1, insertAt);
-      // If char before is already an accidental, replace it
-      if (charBefore == '#' || charBefore == 'b' || charBefore == '♯' || charBefore == '♭') {
-        final newText = text.replaceRange(insertAt - 1, insertAt, accChar);
-        _controller.value = TextEditingValue(
-          text: newText,
-          selection: TextSelection.fromPosition(TextPosition(offset: insertAt)),
-        );
-        _prevLength = newText.length;
-        setState(() => _mode = AccidentalMode.none);
-        return;
-      }
-    }
-    
-    // Insert at cursor position
-    final newText = text.substring(0, insertAt) + accChar + text.substring(insertAt);
-    _controller.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.fromPosition(TextPosition(offset: insertAt + 1)),
-    );
-    _prevLength = newText.length;
-    
-    // Reset mode after insertion
-    setState(() => _mode = AccidentalMode.none);
-  }
 
   void _swapKeys() {
+    HapticFeedback.lightImpact();
     setState(() {
       final temp = fromKey;
       fromKey = toKey;
@@ -149,7 +107,6 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
   void _onTextChanged() {
     final val = _controller.text;
 
-    // If user is deleting, reset mode
     if (val.length < _prevLength) {
       _mode = AccidentalMode.none;
     }
@@ -162,7 +119,6 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
 
     final lastChar = val[val.length - 1];
 
-    // Detect "start of chord token"
     bool isStartOfChord = false;
     if (val.length == 1) {
       isStartOfChord = true;
@@ -172,10 +128,8 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
     }
 
     if (isStartOfChord && RegExp(r'[a-gA-G]').hasMatch(lastChar)) {
-      // If we are in Flat Mode, and the user typed 'b' as the note B,
-      // do not auto-append a flat. (keeps B working naturally)
       if (_mode == AccidentalMode.flat && (lastChar == 'b' || lastChar == 'B')) {
-        // Do nothing.
+        // Do nothing
       } else if (_mode == AccidentalMode.flat || _mode == AccidentalMode.sharp) {
         final accChar = (_mode == AccidentalMode.flat) ? 'b' : '#';
         final newText = val + accChar;
@@ -199,17 +153,13 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
   Widget build(BuildContext context) {
     final repo = ref.watch(repositoryProvider);
 
-    // Theme-aware colors
     final scaffoldBg = AppTheme.getScaffoldBg(context);
     final cardBg = AppTheme.getCardBg(context);
     final borderColor = AppTheme.getBorderColor(context);
     final textPrimary = AppTheme.getTextPrimary(context);
     final textSecondary = AppTheme.getTextSecondary(context);
-    final inputFillColor = AppTheme.getInputFillColor(context);
     final majorLight = AppTheme.getMajorLight(context);
-    final isDark = AppTheme.isDark(context);
 
-    // Keys list (strict spellings handled by TheoryEngine; this UI list is just options)
     const keys = <String>[
       "C", "G", "D", "A", "E", "B", "F#", "C#",
       "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb",
@@ -217,230 +167,403 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: scaffoldBg,
-        elevation: 0,
-        title: Text(
-          "Transposer",
-          style: TextStyle(fontWeight: FontWeight.w800, color: textPrimary),
-        ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-          child: ListView(
-            children: [
-              // Intro Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  color: cardBg,
-                  border: Border.all(color: borderColor),
-                  boxShadow: isDark ? [] : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+      body: CustomScrollView(
+        slivers: [
+          // Modern App Bar
+          SliverAppBar(
+            pinned: true,
+            backgroundColor: scaffoldBg,
+            surfaceTintColor: Colors.transparent,
+            expandedHeight: 100,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Transpose chords to a new key.",
+                      "Transposer",
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
                         color: textPrimary,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 14),
-
-                    // Key selectors with SWAP BUTTON
-                    Row(
-                      children: [
-                        // FROM KEY
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: inputFillColor,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: fromKey,
-                                dropdownColor: cardBg,
-                                style: TextStyle(color: textPrimary, fontSize: 16),
-                                icon: Icon(Icons.arrow_drop_down, color: textSecondary),
-                                items: keys
-                                    .map((k) => DropdownMenuItem(
-                                          value: k,
-                                          child: Text(k),
-                                        ))
-                                    .toList(),
-                                onChanged: (v) => setState(() => fromKey = v!),
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        // SWAP BUTTON
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: IconButton(
-                            onPressed: _swapKeys,
-                            icon: const Icon(Icons.swap_horiz),
-                            tooltip: 'Swap keys',
-                            style: IconButton.styleFrom(
-                              backgroundColor: majorLight,
-                              foregroundColor: AppTheme.tonicBlue,
-                            ),
-                          ),
-                        ),
-                        
-                        // TO KEY
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: inputFillColor,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: toKey,
-                                dropdownColor: cardBg,
-                                style: TextStyle(color: textPrimary, fontSize: 16),
-                                icon: Icon(Icons.arrow_drop_down, color: textSecondary),
-                                items: keys
-                                    .map((k) => DropdownMenuItem(
-                                          value: k,
-                                          child: Text(k),
-                                        ))
-                                    .toList(),
-                                onChanged: (v) => setState(() => toKey = v!),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    // Accidental buttons
-                    Row(
-                      children: [
-                        AccidentalButton(
-                          label: '♭',
-                          isActive: _mode == AccidentalMode.flat,
-                          onTap: () => _setAccidentalMode(AccidentalMode.flat),
-                        ),
-                        const SizedBox(width: 10),
-                        AccidentalButton(
-                          label: '♯',
-                          isActive: _mode == AccidentalMode.sharp,
-                          onTap: () => _setAccidentalMode(AccidentalMode.sharp),
-                        ),
-                        const Spacer(),
-                        if (_controller.text.isNotEmpty)
-                          TextButton(
-                            onPressed: () {
-                              _controller.clear();
-                              setState(() {
-                                _mode = AccidentalMode.none;
-                                _prevLength = 0;
-                              });
-                            },
-                            child: const Text("Clear"),
-                          ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Input
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: inputFillColor,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: borderColor),
-                      ),
-                      child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        minLines: 1,
-                        maxLines: 4,
-                        decoration: InputDecoration(
-                          hintText: "Type chords (e.g. C G Am F)...",
-                          hintStyle: TextStyle(
-                            color: textSecondary.withOpacity(0.5),
-                            fontWeight: FontWeight.w400,
-                            fontSize: 16,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.tonicBlue,
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Convert chord progressions between keys",
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 14,
                       ),
                     ),
                   ],
                 ),
               ),
+            ),
+          ),
 
-              if (_controller.text.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                Text(
-                  "RESULT",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                    fontSize: 11,
-                    color: textSecondary,
+          // Content
+          SliverPadding(
+            padding: const EdgeInsets.all(20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Key Selector Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+                    border: Border.all(color: borderColor),
+                    boxShadow: AppTheme.getShadow(context),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Key Selectors Row
+                      Row(
+                        children: [
+                          // From Key
+                          Expanded(
+                            child: _KeySelector(
+                              label: "From",
+                              value: fromKey,
+                              keys: keys,
+                              onChanged: (v) => setState(() => fromKey = v!),
+                            ),
+                          ),
+
+                          // Swap Button
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: GestureDetector(
+                              onTap: _swapKeys,
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: majorLight,
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                                ),
+                                child: const Icon(
+                                  Icons.swap_horiz_rounded,
+                                  color: AppTheme.tonicBlue,
+                                  size: 22,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // To Key
+                          Expanded(
+                            child: _KeySelector(
+                              label: "To",
+                              value: toKey,
+                              keys: keys,
+                              onChanged: (v) => setState(() => toKey = v!),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Divider
+                      Container(
+                        height: 1,
+                        color: borderColor,
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Input Section
+                      Row(
+                        children: [
+                          Text(
+                            "Chord Progression",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: textPrimary,
+                            ),
+                          ),
+                          const Spacer(),
+                          AccidentalButton(
+                            label: '♭',
+                            isActive: _mode == AccidentalMode.flat,
+                            onTap: () => _setAccidentalMode(AccidentalMode.flat),
+                          ),
+                          const SizedBox(width: 8),
+                          AccidentalButton(
+                            label: '♯',
+                            isActive: _mode == AccidentalMode.sharp,
+                            onTap: () => _setAccidentalMode(AccidentalMode.sharp),
+                          ),
+                          if (_controller.text.isNotEmpty) ...[
+                            const SizedBox(width: 12),
+                            GestureDetector(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                _controller.clear();
+                                setState(() {
+                                  _mode = AccidentalMode.none;
+                                  _prevLength = 0;
+                                });
+                              },
+                              child: Text(
+                                "Clear",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.tonicBlue,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Text Input
+                      Container(
+                        decoration: BoxDecoration(
+                          color: scaffoldBg,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                          border: Border.all(color: borderColor),
+                        ),
+                        child: TextField(
+                          controller: _controller,
+                          focusNode: _focusNode,
+                          minLines: 1,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            hintText: "e.g. C G Am F",
+                            hintStyle: TextStyle(
+                              color: textSecondary.withOpacity(0.5),
+                              fontWeight: FontWeight.w400,
+                              fontSize: 18,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.all(16),
+                          ),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
 
-                Builder(
-                  builder: (context) {
-                    final results = TheoryEngine.transposeProgression(
-                      _controller.text,
-                      fromKey,
-                      toKey,
-                      repo,
-                    );
+                // Results Section
+                if (_controller.text.isNotEmpty) ...[
+                  const SizedBox(height: 28),
 
-                    return Column(
-                      children: results.asMap().entries.map<Widget>((entry) {
-                        final idx = entry.key;
-                        final t = entry.value;
+                  // Section Header
+                  Row(
+                    children: [
+                      Text(
+                        "Transposed Result",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: textPrimary,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: majorLight,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                        ),
+                        child: Text(
+                          "$fromKey → $toKey",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.tonicBlue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: ChordCard(
-                            name: t.name,
-                            notes: t.notes,
-                            badge: "${idx + 1}",
+                  const SizedBox(height: 16),
+
+                  // Result Cards
+                  Builder(
+                    builder: (context) {
+                      final results = TheoryEngine.transposeProgression(
+                        _controller.text,
+                        fromKey,
+                        toKey,
+                        repo,
+                      );
+
+                      if (results.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: cardBg,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                            border: Border.all(color: borderColor),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Enter chords separated by spaces",
+                              style: TextStyle(
+                                color: textSecondary,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         );
-                      }).toList(),
-                    );
-                  },
-                ),
-              ],
-            ],
+                      }
+
+                      return Column(
+                        children: results.asMap().entries.map<Widget>((entry) {
+                          final idx = entry.key;
+                          final t = entry.value;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: ChordCard(
+                              name: t.name,
+                              notes: t.notes,
+                              badge: "${idx + 1}",
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ] else ...[
+                  // Empty State
+                  const SizedBox(height: 40),
+                  _EmptyState(),
+                ],
+
+                const SizedBox(height: 32),
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KeySelector extends StatelessWidget {
+  final String label;
+  final String value;
+  final List<String> keys;
+  final ValueChanged<String?> onChanged;
+
+  const _KeySelector({
+    required this.label,
+    required this.value,
+    required this.keys,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scaffoldBg = AppTheme.getScaffoldBg(context);
+    final cardBg = AppTheme.getCardBg(context);
+    final borderColor = AppTheme.getBorderColor(context);
+    final textPrimary = AppTheme.getTextPrimary(context);
+    final textSecondary = AppTheme.getTextSecondary(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: textSecondary,
           ),
         ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          decoration: BoxDecoration(
+            color: scaffoldBg,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            border: Border.all(color: borderColor),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: value,
+              isExpanded: true,
+              dropdownColor: cardBg,
+              icon: Icon(Icons.keyboard_arrow_down_rounded, color: textSecondary),
+              style: TextStyle(
+                color: textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+              items: keys.map((k) => DropdownMenuItem(
+                value: k,
+                child: Text(k),
+              )).toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = AppTheme.getTextSecondary(context);
+    final majorLight = AppTheme.getMajorLight(context);
+
+    return Center(
+      child: Column(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: majorLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.compare_arrows_rounded,
+              size: 32,
+              color: AppTheme.tonicBlue,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Enter a chord progression",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: textSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "Separate chords with spaces\ne.g. C G Am F",
+            style: TextStyle(
+              fontSize: 14,
+              color: textSecondary.withOpacity(0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

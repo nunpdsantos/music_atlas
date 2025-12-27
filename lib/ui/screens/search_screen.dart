@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
 import '../../logic/providers.dart';
@@ -49,9 +50,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _toggleMode(AccidentalMode newMode) {
+    HapticFeedback.selectionClick();
     final text = _controller.text;
-    
-    // If text is empty, just set mode for next typed character
+
     if (text.isEmpty) {
       setState(() {
         _mode = (_mode == newMode) ? AccidentalMode.none : newMode;
@@ -59,11 +60,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       _focusNode.requestFocus();
       return;
     }
-    
-    // Get the accidental character
+
     final accChar = newMode == AccidentalMode.flat ? 'b' : '#';
-    
-    // Find the last note letter in the text
+
     int lastNoteIndex = -1;
     for (int i = text.length - 1; i >= 0; i--) {
       if (RegExp(r'[a-gA-G]').hasMatch(text[i])) {
@@ -71,14 +70,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         break;
       }
     }
-    
+
     if (lastNoteIndex >= 0) {
-      // Check if there's already an accidental after this note
       final afterNoteIndex = lastNoteIndex + 1;
       if (afterNoteIndex < text.length) {
         final charAfterNote = text[afterNoteIndex];
         if (charAfterNote == '#' || charAfterNote == 'b' || charAfterNote == '♯' || charAfterNote == '♭') {
-          // Replace existing accidental
           final newText = text.replaceRange(afterNoteIndex, afterNoteIndex + 1, accChar);
           _controller.value = TextEditingValue(
             text: newText,
@@ -92,8 +89,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           return;
         }
       }
-      
-      // Insert accidental after the last note letter
+
       final insertAt = lastNoteIndex + 1;
       final newText = text.substring(0, insertAt) + accChar + text.substring(insertAt);
       _controller.value = TextEditingValue(
@@ -105,47 +101,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       _updateSuggestions(newText);
       setState(() => _mode = AccidentalMode.none);
     } else {
-      // No note found, just toggle mode
       setState(() {
         _mode = (_mode == newMode) ? AccidentalMode.none : newMode;
       });
     }
     _focusNode.requestFocus();
-  }
-  
-  // Keep the old _insertAccidental for backward compatibility with onTextChanged
-  void _insertAccidental(String accChar) {
-    final text = _controller.text;
-    final selection = _controller.selection;
-    
-    int insertAt = text.length;
-    if (selection.isValid && selection.baseOffset >= 0) {
-      insertAt = selection.baseOffset;
-    }
-    
-    if (insertAt > 0) {
-      final charBefore = text.substring(insertAt - 1, insertAt);
-      if (charBefore == '#' || charBefore == 'b' || charBefore == '♯' || charBefore == '♭') {
-        final newText = text.replaceRange(insertAt - 1, insertAt, accChar);
-        _controller.value = TextEditingValue(
-          text: newText,
-          selection: TextSelection.fromPosition(TextPosition(offset: insertAt)),
-        );
-        _prevLength = newText.length;
-        _performSearch(newText);
-        _updateSuggestions(newText);
-        return;
-      }
-    }
-    
-    final newText = text.substring(0, insertAt) + accChar + text.substring(insertAt);
-    _controller.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.fromPosition(TextPosition(offset: insertAt + 1)),
-    );
-    _prevLength = newText.length;
-    _performSearch(newText);
-    _updateSuggestions(newText);
   }
 
   void _updateSuggestions(String value) {
@@ -193,22 +153,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     bool hasSharp = val.contains('#') || val.contains('♯');
     bool hasFlat = val.contains('b') || val.contains('♭');
 
-    if (hasFlat) {
-      if (val == "b" || val == "B") {
-        hasFlat = false;
-      }
+    if (hasFlat && (val == "b" || val == "B")) {
+      hasFlat = false;
     }
 
-    if (hasSharp) {
-      if (_mode != AccidentalMode.sharp) setState(() => _mode = AccidentalMode.sharp);
-    } else if (hasFlat) {
-      if (_mode != AccidentalMode.flat) setState(() => _mode = AccidentalMode.flat);
+    if (hasSharp && _mode != AccidentalMode.sharp) {
+      setState(() => _mode = AccidentalMode.sharp);
+    } else if (hasFlat && _mode != AccidentalMode.flat) {
+      setState(() => _mode = AccidentalMode.flat);
     }
 
     _performSearch(val);
   }
 
   void _selectSuggestion(SearchSuggestion suggestion) {
+    HapticFeedback.selectionClick();
     _controller.text = suggestion.text;
     _controller.selection = TextSelection.fromPosition(
       TextPosition(offset: suggestion.text.length),
@@ -224,230 +183,263 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final repo = ref.watch(repositoryProvider);
     final results = _query.isEmpty ? <ChordDefinition>[] : repo.search(_query);
 
-    // Theme-aware colors
     final scaffoldBg = AppTheme.getScaffoldBg(context);
-    final cardBgCol = AppTheme.getCardBg(context);
-    final borderCol = AppTheme.getBorderColor(context);
-    final textSecCol = AppTheme.getTextSecondary(context);
+    final cardBg = AppTheme.getCardBg(context);
+    final borderColor = AppTheme.getBorderColor(context);
+    final textSecondary = AppTheme.getTextSecondary(context);
+    final textPrimary = AppTheme.getTextPrimary(context);
     final isDark = AppTheme.isDark(context);
-    
-    // Check if keyboard is visible
+
     final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: scaffoldBg,
-      appBar: AppBar(
-        title: const Text("Chord Finder"),
-        backgroundColor: scaffoldBg,
-        surfaceTintColor: Colors.transparent,
-      ),
       body: GestureDetector(
         onTap: () {
           _focusNode.unfocus();
           setState(() => _showSuggestions = false);
         },
-        child: Column(
-          children: [
-            // Search Header - Fixed at top
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              color: scaffoldBg,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Type a chord symbol, name, or notes",
-                    style: TextStyle(color: textSecCol, fontSize: 13),
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  // Search Row - fixed with proper constraints
-                  Row(
+        child: CustomScrollView(
+          slivers: [
+            // Modern App Bar with Search
+            SliverAppBar(
+              pinned: true,
+              floating: true,
+              backgroundColor: scaffoldBg,
+              surfaceTintColor: Colors.transparent,
+              expandedHeight: 140,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          focusNode: _focusNode,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.tonicBlue,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: "e.g. Cm7, G#, Bb...",
-                            hintStyle: TextStyle(
-                              color: textSecCol.withOpacity(0.5),
-                              fontWeight: FontWeight.normal,
-                            ),
-                            prefixIcon: Icon(Icons.search, color: textSecCol),
-                            suffixIcon: _controller.text.isNotEmpty
-                                ? IconButton(
-                                    icon: Icon(Icons.close, color: textSecCol, size: 20),
-                                    onPressed: () {
-                                      _controller.clear();
-                                      setState(() {
-                                        _query = "";
-                                        _prevLength = 0;
-                                        _suggestions = [];
-                                        _showSuggestions = false;
-                                      });
-                                    },
-                                  )
-                                : null,
-                            filled: true,
-                            fillColor: cardBgCol,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: borderCol),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: borderCol),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: AppTheme.tonicBlue, width: 1.5),
-                            ),
-                          ),
-                          onChanged: _onTextChanged,
-                          onTap: () {
-                            if (_controller.text.isNotEmpty) {
-                              _updateSuggestions(_controller.text);
-                            }
-                          },
+                      Text(
+                        "Chord Finder",
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      AccidentalButton(
-                        label: '♭',
-                        isActive: _mode == AccidentalMode.flat,
-                        onTap: () => _toggleMode(AccidentalMode.flat),
-                      ),
-                      const SizedBox(width: 8),
-                      AccidentalButton(
-                        label: '♯',
-                        isActive: _mode == AccidentalMode.sharp,
-                        onTap: () => _toggleMode(AccidentalMode.sharp),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Search from 5000+ chord voicings",
+                        style: TextStyle(
+                          color: textSecondary,
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
-                  
-                  // Suggestions Dropdown
-                  if (_showSuggestions && _suggestions.isNotEmpty)
-                    Container(
-                      margin: const EdgeInsets.only(top: 8),
-                      constraints: BoxConstraints(
-                        maxHeight: keyboardVisible ? 150 : 300,
-                      ),
-                      decoration: BoxDecoration(
-                        color: cardBgCol,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: borderCol),
-                        boxShadow: isDark ? [] : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.zero,
-                        itemCount: _suggestions.length,
-                        itemBuilder: (context, index) {
-                          final suggestion = _suggestions[index];
-                          final isLast = index == _suggestions.length - 1;
-                          
-                          return InkWell(
-                            onTap: () => _selectSuggestion(suggestion),
-                            borderRadius: BorderRadius.vertical(
-                              top: index == 0 ? const Radius.circular(12) : Radius.zero,
-                              bottom: isLast ? const Radius.circular(12) : Radius.zero,
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              decoration: BoxDecoration(
-                                border: isLast ? null : Border(
-                                  bottom: BorderSide(color: borderCol.withOpacity(0.5)),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  // Chord symbol - constrained width
-                                  Container(
-                                    constraints: const BoxConstraints(maxWidth: 80),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.getMajorLight(context),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      suggestion.text,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: AppTheme.tonicBlue,
-                                        fontSize: 14,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  // Hint text - expanded to take remaining space
-                                  Expanded(
-                                    child: Text(
-                                      suggestion.hint,
-                                      style: TextStyle(
-                                        color: textSecCol.withOpacity(0.8),
-                                        fontSize: 13,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.arrow_forward_ios,
-                                    size: 14,
-                                    color: textSecCol,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                ],
+                ),
               ),
             ),
-            
-            // Results - Flexible with proper keyboard handling
-            Expanded(
-              child: results.isEmpty
-                  ? (_query.isEmpty 
-                      ? _EmptySearchState(keyboardVisible: keyboardVisible)
-                      : _NoResultsState(query: _query, keyboardVisible: keyboardVisible))
-                  : ListView.separated(
-                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: EdgeInsets.only(
-                        left: 20, 
-                        right: 20, 
-                        top: 10, 
-                        bottom: keyboardVisible ? 10 : 20,
-                      ),
-                      shrinkWrap: false,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      itemCount: results.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final chord = results[index];
-                        return _ChordResultCard(chord: chord);
-                      },
+
+            // Search Bar Section
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Search Input Row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                              boxShadow: AppTheme.getShadow(context),
+                            ),
+                            child: TextField(
+                              controller: _controller,
+                              focusNode: _focusNode,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimary,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: "e.g. Cm7, G#, Bbmaj7...",
+                                hintStyle: TextStyle(
+                                  color: textSecondary.withOpacity(0.5),
+                                  fontWeight: FontWeight.w400,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.search_rounded,
+                                  color: textSecondary,
+                                ),
+                                suffixIcon: _controller.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: Icon(Icons.close_rounded, color: textSecondary, size: 20),
+                                        onPressed: () {
+                                          HapticFeedback.selectionClick();
+                                          _controller.clear();
+                                          setState(() {
+                                            _query = "";
+                                            _prevLength = 0;
+                                            _suggestions = [];
+                                            _showSuggestions = false;
+                                          });
+                                        },
+                                      )
+                                    : null,
+                                filled: true,
+                                fillColor: cardBg,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                                  borderSide: BorderSide(color: borderColor),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                                  borderSide: BorderSide(color: borderColor),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                                  borderSide: const BorderSide(color: AppTheme.tonicBlue, width: 2),
+                                ),
+                              ),
+                              onChanged: _onTextChanged,
+                              onTap: () {
+                                if (_controller.text.isNotEmpty) {
+                                  _updateSuggestions(_controller.text);
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        AccidentalButton(
+                          label: '♭',
+                          isActive: _mode == AccidentalMode.flat,
+                          onTap: () => _toggleMode(AccidentalMode.flat),
+                        ),
+                        const SizedBox(width: 8),
+                        AccidentalButton(
+                          label: '♯',
+                          isActive: _mode == AccidentalMode.sharp,
+                          onTap: () => _toggleMode(AccidentalMode.sharp),
+                        ),
+                      ],
                     ),
+
+                    // Suggestions Dropdown
+                    if (_showSuggestions && _suggestions.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        constraints: BoxConstraints(
+                          maxHeight: keyboardVisible ? 150 : 280,
+                        ),
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                          border: Border.all(color: borderColor),
+                          boxShadow: AppTheme.getShadow(context, size: 'lg'),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            itemCount: _suggestions.length,
+                            itemBuilder: (context, index) {
+                              final suggestion = _suggestions[index];
+                              final isLast = index == _suggestions.length - 1;
+
+                              return InkWell(
+                                onTap: () => _selectSuggestion(suggestion),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    border: isLast ? null : Border(
+                                      bottom: BorderSide(color: borderColor.withOpacity(0.5)),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        constraints: const BoxConstraints(minWidth: 60),
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.getMajorLight(context),
+                                          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                                        ),
+                                        child: Text(
+                                          suggestion.text,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.tonicBlue,
+                                            fontSize: 14,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          suggestion.hint,
+                                          style: TextStyle(
+                                            color: textSecondary,
+                                            fontSize: 13,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.north_west_rounded,
+                                        size: 14,
+                                        color: textSecondary.withOpacity(0.5),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
             ),
+
+            // Results or Empty State
+            if (results.isEmpty && _query.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: _EmptySearchState(keyboardVisible: keyboardVisible),
+              )
+            else if (results.isEmpty && _query.isNotEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: _NoResultsState(query: _query),
+              )
+            else
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 8,
+                  bottom: keyboardVisible ? 16 : 32,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final chord = results[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _ChordResultCard(chord: chord),
+                      );
+                    },
+                    childCount: results.length,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -455,7 +447,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 }
 
-/// Inline chord result card with proper overflow handling
 class _ChordResultCard extends StatelessWidget {
   final ChordDefinition chord;
 
@@ -463,30 +454,26 @@ class _ChordResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Theme-aware colors
-    final cardBgCol = AppTheme.getCardBg(context);
-    final borderCol = AppTheme.getBorderColor(context);
-    final textPrimCol = AppTheme.getTextPrimary(context);
-    final textSecCol = AppTheme.getTextSecondary(context);
-    final isDark = AppTheme.isDark(context);
-    
-    // Determine chord quality from name
+    final cardBg = AppTheme.getCardBg(context);
+    final borderColor = AppTheme.getBorderColor(context);
+    final textPrimary = AppTheme.getTextPrimary(context);
+    final textSecondary = AppTheme.getTextSecondary(context);
+
     final name = chord.displayName.toLowerCase();
     final bool isDim = name.contains('dim') || name.contains('°');
     final bool isAug = name.contains('aug') || name.contains('+');
     final bool isMinor = !isDim && !isAug && (name.contains('m') && !name.contains('maj'));
     final bool isMajor = !isDim && !isMinor && !isAug;
 
-    // Color scheme based on chord quality
     Color badgeBg;
     Color badgeText;
 
     if (isDim) {
-      badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
+      badgeBg = AppTheme.isDark(context) ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
+      badgeText = AppTheme.accentRed;
     } else if (isAug) {
-      badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
+      badgeBg = AppTheme.isDark(context) ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
+      badgeText = AppTheme.accentPurple;
     } else if (isMajor) {
       badgeBg = AppTheme.getMajorLight(context);
       badgeText = AppTheme.tonicBlue;
@@ -495,16 +482,16 @@ class _ChordResultCard extends StatelessWidget {
       badgeText = AppTheme.minorAmber;
     }
 
-    // Extract root for fretboard
     String root = chord.displayName.isNotEmpty ? chord.displayName[0] : 'C';
-    if (chord.displayName.length > 1 && 
-        (chord.displayName[1] == '#' || chord.displayName[1] == 'b' || 
+    if (chord.displayName.length > 1 &&
+        (chord.displayName[1] == '#' || chord.displayName[1] == 'b' ||
          chord.displayName[1] == '♯' || chord.displayName[1] == '♭')) {
       root = chord.displayName.substring(0, 2);
     }
 
     return GestureDetector(
       onTap: () {
+        HapticFeedback.lightImpact();
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
@@ -516,63 +503,76 @@ class _ChordResultCard extends StatelessWidget {
           ),
         );
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: AnimatedContainer(
+        duration: AppTheme.durationFast,
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: cardBgCol,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: borderCol),
-          boxShadow: isDark ? [] : [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: cardBg,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          border: Border.all(color: borderColor),
+          boxShadow: AppTheme.getShadow(context, size: 'sm'),
         ),
         child: Row(
           children: [
-            // Chord name badge - with max width constraint
+            // Chord Name Badge
             Container(
-              constraints: const BoxConstraints(maxWidth: 100),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              constraints: const BoxConstraints(minWidth: 70),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: badgeBg,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
               child: Text(
                 chord.displayName,
                 style: TextStyle(
                   color: badgeText,
                   fontWeight: FontWeight.w700,
-                  fontSize: 14,
+                  fontSize: 15,
                 ),
                 textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
-            
-            const SizedBox(width: 12),
-            
-            // Notes display - takes remaining space
+            const SizedBox(width: 14),
+
+            // Notes
             Expanded(
-              child: Text(
-                chord.notes.join(' • '),
-                style: TextStyle(
-                  color: textPrimCol,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    chord.notes.join(' • '),
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "${chord.notes.length} notes",
+                    style: TextStyle(
+                      color: textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
-            
-            // Arrow indicator
-            const SizedBox(width: 8),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
-              color: textSecCol,
+
+            // Arrow
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppTheme.getScaffoldBg(context),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+              ),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                size: 16,
+                color: textSecondary,
+              ),
             ),
           ],
         ),
@@ -583,114 +583,129 @@ class _ChordResultCard extends StatelessWidget {
 
 class _EmptySearchState extends StatelessWidget {
   final bool keyboardVisible;
-  
+
   const _EmptySearchState({this.keyboardVisible = false});
 
   @override
   Widget build(BuildContext context) {
-    final cardBgCol = AppTheme.cardBackground(context);
-    final borderCol = AppTheme.border(context);
-    final textPrimCol = AppTheme.textPrimaryColor(context);
-    final textSecCol = AppTheme.textSecondaryColor(context);
-    final majorLightCol = AppTheme.majorLightColor(context);
+    final cardBg = AppTheme.getCardBg(context);
+    final borderColor = AppTheme.getBorderColor(context);
+    final textPrimary = AppTheme.getTextPrimary(context);
+    final textSecondary = AppTheme.getTextSecondary(context);
+    final majorLight = AppTheme.getMajorLight(context);
 
-    // Use ListView instead of Column to handle overflow gracefully
-    return ListView(
-      shrinkWrap: true,
-      physics: const ClampingScrollPhysics(),
+    return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: 32, 
-        vertical: keyboardVisible ? 12 : 24,
+        horizontal: 24,
+        vertical: keyboardVisible ? 16 : 32,
       ),
-      children: [
-        if (!keyboardVisible) ...[
-          const SizedBox(height: 20),
-          Center(
-            child: Container(
+      child: Column(
+        mainAxisAlignment: keyboardVisible ? MainAxisAlignment.start : MainAxisAlignment.center,
+        children: [
+          if (!keyboardVisible) ...[
+            Container(
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: majorLightCol,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    majorLight,
+                    AppTheme.tonicBlue.withOpacity(0.2),
+                  ],
+                ),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.music_note,
-                size: 40,
+                Icons.music_note_rounded,
+                size: 36,
                 color: AppTheme.tonicBlue,
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          
-          Text(
-            "Search for any chord",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: textPrimCol,
+            const SizedBox(height: 24),
+            Text(
+              "Find any chord",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: textPrimary,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          
-          Text(
-            "Try typing a chord symbol or partial text",
-            style: TextStyle(
-              fontSize: 14,
-              color: textSecCol,
+            const SizedBox(height: 8),
+            Text(
+              "Search by symbol, name, or notes",
+              style: TextStyle(
+                fontSize: 14,
+                color: textSecondary,
+              ),
             ),
-            textAlign: TextAlign.center,
+            const SizedBox(height: 32),
+          ],
+
+          // Quick Tips
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+              border: Border.all(color: borderColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Quick tips",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _SearchTip(icon: Icons.music_note, example: 'Cm7', description: 'Standard symbols'),
+                const SizedBox(height: 12),
+                _SearchTip(icon: Icons.tag, example: 'gsh → G#', description: 'Type "sh" for sharp'),
+                const SizedBox(height: 12),
+                _SearchTip(icon: Icons.tag, example: 'bfl → Bb', description: 'Type "fl" for flat'),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
         ],
-        
-        // Search tips - always show but more compact when keyboard is up
-        Container(
-          padding: EdgeInsets.all(keyboardVisible ? 12 : 16),
-          decoration: BoxDecoration(
-            color: cardBgCol,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderCol),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _SearchTip(example: 'Cm7', description: 'Standard chord symbols'),
-              SizedBox(height: keyboardVisible ? 6 : 8),
-              _SearchTip(example: 'gsh → G#', description: 'Type "sh" for sharp'),
-              SizedBox(height: keyboardVisible ? 6 : 8),
-              _SearchTip(example: 'bfl → Bb', description: 'Type "fl" for flat'),
-              SizedBox(height: keyboardVisible ? 6 : 8),
-              _SearchTip(example: 'Cb → B', description: 'Enharmonic equivalents'),
-            ],
-          ),
-        ),
-        if (!keyboardVisible) const SizedBox(height: 20),
-      ],
+      ),
     );
   }
 }
 
 class _SearchTip extends StatelessWidget {
+  final IconData icon;
   final String example;
   final String description;
-  
-  const _SearchTip({required this.example, required this.description});
+
+  const _SearchTip({required this.icon, required this.example, required this.description});
 
   @override
   Widget build(BuildContext context) {
-    final scaffoldBgCol = AppTheme.scaffoldBackground(context);
-    final textSecCol = AppTheme.textSecondaryColor(context);
+    final scaffoldBg = AppTheme.getScaffoldBg(context);
+    final textSecondary = AppTheme.getTextSecondary(context);
 
     return Row(
       children: [
         Container(
-          constraints: const BoxConstraints(minWidth: 70),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          width: 32,
+          height: 32,
           decoration: BoxDecoration(
-            color: scaffoldBgCol,
-            borderRadius: BorderRadius.circular(6),
+            color: scaffoldBg,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          ),
+          child: Icon(icon, size: 16, color: AppTheme.tonicBlue),
+        ),
+        const SizedBox(width: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppTheme.getMajorLight(context),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
           ),
           child: Text(
             example,
@@ -708,9 +723,8 @@ class _SearchTip extends StatelessWidget {
             description,
             style: TextStyle(
               fontSize: 13,
-              color: textSecCol,
+              color: textSecondary,
             ),
-            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -720,71 +734,53 @@ class _SearchTip extends StatelessWidget {
 
 class _NoResultsState extends StatelessWidget {
   final String query;
-  final bool keyboardVisible;
-  
-  const _NoResultsState({required this.query, this.keyboardVisible = false});
+
+  const _NoResultsState({required this.query});
 
   @override
   Widget build(BuildContext context) {
-    final textSecCol = AppTheme.textSecondaryColor(context);
-    final borderCol = AppTheme.border(context);
-    final isEnharmonic = _checkEnharmonic(query.toLowerCase());
-    
-    // Use ListView to handle overflow gracefully
-    return ListView(
-      shrinkWrap: true,
-      physics: const ClampingScrollPhysics(),
-      padding: EdgeInsets.symmetric(
-        horizontal: 32, 
-        vertical: keyboardVisible ? 16 : 24,
-      ),
-      children: [
-        SizedBox(height: keyboardVisible ? 20 : 40),
-        Center(child: Icon(Icons.search_off, size: 48, color: borderCol)),
-        const SizedBox(height: 16),
-        Text(
-          'No chords found for "$query"',
-          style: TextStyle(
-            color: textSecCol,
-            fontSize: 16,
+    final textSecondary = AppTheme.getTextSecondary(context);
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: borderColor.withOpacity(0.3),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.search_off_rounded,
+              size: 28,
+              color: textSecondary,
+            ),
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        if (isEnharmonic != null)
+          const SizedBox(height: 20),
           Text(
-            'Try searching for "$isEnharmonic" instead',
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppTheme.tonicBlue,
+            'No results for "$query"',
+            style: TextStyle(
+              color: textSecondary,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
-          )
-        else
+          ),
+          const SizedBox(height: 8),
           Text(
-            'Try a different spelling or use ♯/♭ buttons',
+            'Try a different spelling or use the ♯/♭ buttons',
             style: TextStyle(
               fontSize: 13,
-              color: textSecCol.withOpacity(0.7),
+              color: textSecondary.withOpacity(0.7),
             ),
             textAlign: TextAlign.center,
           ),
-        SizedBox(height: keyboardVisible ? 20 : 40),
-      ],
+        ],
+      ),
     );
-  }
-  
-  String? _checkEnharmonic(String query) {
-    const enharmonics = {
-      'cb': 'B', 'fb': 'E', 'b#': 'C', 'e#': 'F',
-    };
-    
-    for (final entry in enharmonics.entries) {
-      if (query.startsWith(entry.key)) {
-        final quality = query.length > 2 ? query.substring(2) : '';
-        return entry.value + quality;
-      }
-    }
-    return null;
   }
 }

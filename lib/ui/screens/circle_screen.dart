@@ -90,64 +90,74 @@ class CircleScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: pack.scale.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final note = entry.value;
+          Semantics(
+            label: 'Scale notes: ${pack.scale.join(", ")}. Tap to view on fretboard.',
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: pack.scale.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final note = entry.value;
+                final degreeNames = ['Root', '2nd', '3rd', '4th', '5th', '6th', '7th'];
+                final degree = idx < degreeNames.length ? degreeNames[idx] : '';
 
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    String title = "";
-                    if (isMajor) {
-                      title = "${pack.scale[0]} Major Scale";
-                    } else {
-                      String typeName = state.minorType.name;
-                      typeName = typeName[0].toUpperCase() + typeName.substring(1);
-                      title = "${pack.scale[0]} $typeName Minor Scale";
-                    }
+                return Expanded(
+                  child: Semantics(
+                    button: true,
+                    label: '$note, $degree degree',
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                      onTap: () {
+                        String title = "";
+                        if (isMajor) {
+                          title = "${pack.scale[0]} Major Scale";
+                        } else {
+                          String typeName = state.minorType.name;
+                          typeName = typeName[0].toUpperCase() + typeName.substring(1);
+                          title = "${pack.scale[0]} $typeName Minor Scale";
+                        }
 
-                    final sheetRoot = pack.scale.isNotEmpty ? pack.scale.first : 'C';
+                        final sheetRoot = pack.scale.isNotEmpty ? pack.scale.first : 'C';
 
-                    showModalBottomSheet(
-                      context: context,
-                      backgroundColor: cardBg,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                      ),
-                      builder: (context) {
-                        return InteractiveFretboardSheet(
-                          chordName: title,
-                          chordNotes: pack.scale,
-                          isScale: true,
-                          root: sheetRoot,
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: cardBg,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          builder: (context) {
+                            return InteractiveFretboardSheet(
+                              chordName: title,
+                              chordNotes: pack.scale,
+                              isScale: true,
+                              root: sheetRoot,
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(right: idx == 6 ? 0 : 4),
-                    height: 38,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: scaleBg,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: scaleBorder.withOpacity(0.1)),
-                    ),
-                    child: Text(
-                      note,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: scaleText,
-                        fontSize: 14,
+                      child: Container(
+                        margin: EdgeInsets.only(right: idx == 6 ? 0 : 4),
+                        height: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: scaleBg,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: scaleBorder.withOpacity(0.1)),
+                        ),
+                        child: Text(
+                          note,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: scaleText,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -302,42 +312,52 @@ class _CurrentKeyCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    GestureDetector(
-                      onTap: () => ref.read(circleProvider.notifier).setView(KeyView.values[0]),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: isMajor ? cardBg : Colors.transparent,
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: isMajor ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 3)] : [],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          "Major",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: isMajor ? AppTheme.tonicBlue : textSecondary,
+                    Semantics(
+                      button: true,
+                      selected: isMajor,
+                      label: 'Major mode${isMajor ? ', selected' : ''}',
+                      child: GestureDetector(
+                        onTap: () => ref.read(circleProvider.notifier).setView(KeyView.values[0]),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          decoration: BoxDecoration(
+                            color: isMajor ? cardBg : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: isMajor ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 3)] : [],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            "Major",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: isMajor ? AppTheme.tonicBlue : textSecondary,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => ref.read(circleProvider.notifier).setView(KeyView.values[1]),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: !isMajor ? cardBg : Colors.transparent,
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: !isMajor ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 3)] : [],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          "Minor",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: !isMajor ? AppTheme.minorAmber : textSecondary,
+                    Semantics(
+                      button: true,
+                      selected: !isMajor,
+                      label: 'Minor mode${!isMajor ? ', selected' : ''}',
+                      child: GestureDetector(
+                        onTap: () => ref.read(circleProvider.notifier).setView(KeyView.values[1]),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          decoration: BoxDecoration(
+                            color: !isMajor ? cardBg : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: !isMajor ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 3)] : [],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            "Minor",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: !isMajor ? AppTheme.minorAmber : textSecondary,
+                            ),
                           ),
                         ),
                       ),
@@ -399,24 +419,33 @@ class _MinorTypeSelector extends StatelessWidget {
     final textSecondary = AppTheme.getTextSecondary(context);
     final minorLight = AppTheme.getMinorLight(context);
 
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      height: 36,
-      decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(18), border: Border.all(color: borderColor)),
-      child: Row(
-        children: MinorType.values.map((type) {
-          final isActive = type == current;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onChanged(type),
-              child: Container(
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: isActive ? minorLight : Colors.transparent, borderRadius: BorderRadius.circular(18)),
-                child: Text(type.name[0].toUpperCase() + type.name.substring(1), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive ? AppTheme.minorAmber : textSecondary)),
+    return Semantics(
+      label: 'Minor scale type selector. Current: ${current.name}',
+      child: Container(
+        margin: const EdgeInsets.only(top: 16),
+        height: 36,
+        decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(18), border: Border.all(color: borderColor)),
+        child: Row(
+          children: MinorType.values.map((type) {
+            final isActive = type == current;
+            final typeName = type.name[0].toUpperCase() + type.name.substring(1);
+            return Expanded(
+              child: Semantics(
+                button: true,
+                selected: isActive,
+                label: '$typeName minor${isActive ? ', selected' : ''}',
+                child: GestureDetector(
+                  onTap: () => onChanged(type),
+                  child: Container(
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: isActive ? minorLight : Colors.transparent, borderRadius: BorderRadius.circular(18)),
+                    child: Text(typeName, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive ? AppTheme.minorAmber : textSecondary)),
+                  ),
+                ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

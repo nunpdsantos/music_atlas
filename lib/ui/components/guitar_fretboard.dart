@@ -47,21 +47,32 @@ class _GuitarFretboardState extends State<GuitarFretboard> {
     final double contentWidth = (widget.totalFrets * widget.fretWidth) + nutPadding;
     final isDark = AppTheme.isDark(context);
 
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      child: SizedBox(
-        width: contentWidth,
-        height: widget.height,
-        child: CustomPaint(
-          painter: GuitarFretboardPainter(
-            tones: widget.tones,
-            root: widget.root,
-            leftHanded: widget.leftHanded,
-            fretWidth: widget.fretWidth,
-            totalFrets: widget.totalFrets,
-            nutPadding: nutPadding,
-            isDark: isDark,
+    // Build semantic description for accessibility
+    final notesDescription = widget.tones.isNotEmpty
+        ? 'Notes displayed: ${widget.tones.join(", ")}'
+        : 'No notes displayed';
+    final semanticLabel = 'Guitar fretboard visualization. '
+        'Root: ${widget.root}. $notesDescription. '
+        'Swipe horizontally to navigate frets.';
+
+    return Semantics(
+      label: semanticLabel,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: contentWidth,
+          height: widget.height,
+          child: CustomPaint(
+            painter: GuitarFretboardPainter(
+              tones: widget.tones,
+              root: widget.root,
+              leftHanded: widget.leftHanded,
+              fretWidth: widget.fretWidth,
+              totalFrets: widget.totalFrets,
+              nutPadding: nutPadding,
+              isDark: isDark,
+            ),
           ),
         ),
       ),

@@ -40,7 +40,17 @@ class PianoKeyboard extends StatelessWidget {
         ? const Color(0xFF252538)
         : const Color(0xFF3D3D4A);
 
-    return Container(
+    // Build semantic description for accessibility
+    final notesDescription = tones.isNotEmpty
+        ? 'Notes highlighted: ${tones.join(", ")}'
+        : 'No notes highlighted';
+    final semanticLabel = 'Piano keyboard visualization. '
+        'Root: $root. $notesDescription. '
+        '${octaves > 1 ? "Swipe horizontally to see more keys." : ""}';
+
+    return Semantics(
+      label: semanticLabel,
+      child: Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
@@ -119,6 +129,7 @@ class PianoKeyboard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

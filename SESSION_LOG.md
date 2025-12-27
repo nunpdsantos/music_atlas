@@ -8,20 +8,21 @@
 ## CURRENT CHECKPOINT
 
 **Last Updated:** December 27, 2025
-**Session:** 1
-**Status:** Phase 1 in progress
+**Session:** 2
+**Status:** Phase 1 nearly complete (~90% done)
 
 ### Where We Are
 - Phase 0 (Foundation) is **COMPLETE**
-- Phase 1 (Polish & Persistence) is **IN PROGRESS** (~75% done)
+- Phase 1 (Polish & Persistence) is **IN PROGRESS** (~90% done)
 - Data Persistence is **COMPLETE**
 - Entrance Animations is **COMPLETE**
-- Currently working on: **Accessibility (Semantics)**
+- Accessibility (Semantics) is **COMPLETE**
+- Currently working on: **Dartdoc comments for public APIs**
 
 ### What To Do Next
 1. ~~Create animation utilities/tokens~~ **DONE**
 2. ~~Apply entrance animations to screens~~ **DONE** (CircleScreen, ModesScreen, SettingsScreen)
-3. Add accessibility (Semantics) widgets
+3. ~~Add accessibility (Semantics) widgets~~ **DONE**
 4. Add dartdoc comments to public APIs
 
 ### Important Context
@@ -33,6 +34,30 @@
 ---
 
 ## SESSION HISTORY
+
+### Session 2 - December 27, 2025
+
+**Completed:**
+1. **Accessibility (Semantics)** (COMPLETE)
+   - Added Semantics to ChordCard and ChordCardGrid components
+   - Added Semantics to Circle of Fifths interactive visualization
+   - Added Semantics to CircleScreen scale notes and toggle buttons
+   - Added Semantics to ModesScreen scale notes
+   - Added Semantics to MinorTypeSelector
+   - Added Semantics to InteractiveFretboardSheet toggle buttons
+   - Added Semantics to GuitarFretboard visualization
+   - Added Semantics to PianoKeyboard visualization
+
+**Files Modified:**
+- `lib/ui/components/chord_card.dart` - Semantic labels for chord cards
+- `lib/ui/components/circle_of_fifths.dart` - Semantic labels for circle
+- `lib/ui/components/guitar_fretboard.dart` - Semantic labels for fretboard
+- `lib/ui/components/piano_keyboard.dart` - Semantic labels for keyboard
+- `lib/ui/components/interactive_fretboard_sheet.dart` - Semantic labels for toggles
+- `lib/ui/screens/circle_screen.dart` - Semantic labels for interactive elements
+- `lib/ui/screens/modes_screen.dart` - Semantic labels for scale notes
+
+---
 
 ### Session 1 - December 27, 2025
 

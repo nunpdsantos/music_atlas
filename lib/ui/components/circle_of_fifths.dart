@@ -14,22 +14,35 @@ class InteractiveCircle extends ConsumerWidget {
     final state = ref.watch(circleProvider);
     final isDark = AppTheme.isDark(context);
 
-    return AspectRatio(
-      aspectRatio: 1,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return GestureDetector(
-            onTapUp: (details) => _handleTap(context, ref, details, constraints.maxWidth),
-            child: CustomPaint(
-              size: Size(constraints.maxWidth, constraints.maxWidth),
-              painter: DualCirclePainter(
-                selectedMajor: state.selectedMajorRoot,
-                view: state.view,
-                isDark: isDark,
+    // Build semantic label for screen readers
+    final isMajor = state.view == KeyView.major;
+    final relMinor = TheoryEngine.kRelativeMinors[state.selectedMajorRoot] ?? '';
+    final currentKey = isMajor
+        ? '${state.selectedMajorRoot} Major'
+        : '${relMinor} minor';
+    final semanticLabel = 'Circle of Fifths. Currently selected: $currentKey. '
+        'Tap outer ring for major keys, inner ring for minor keys.';
+
+    return Semantics(
+      label: semanticLabel,
+      hint: 'Double tap to select a key',
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return GestureDetector(
+              onTapUp: (details) => _handleTap(context, ref, details, constraints.maxWidth),
+              child: CustomPaint(
+                size: Size(constraints.maxWidth, constraints.maxWidth),
+                painter: DualCirclePainter(
+                  selectedMajor: state.selectedMajorRoot,
+                  view: state.view,
+                  isDark: isDark,
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

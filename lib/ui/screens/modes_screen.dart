@@ -275,51 +275,61 @@ class _ModesScreenState extends State<ModesScreen> {
           ),
           const SizedBox(height: 10),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: pack.scale.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final note = entry.value;
+          Semantics(
+            label: '$_root $modeName scale notes: ${pack.scale.join(", ")}. Tap to view on fretboard.',
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: pack.scale.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final note = entry.value;
+                final degreeNames = ['Root', '2nd', '3rd', '4th', '5th', '6th', '7th'];
+                final degree = idx < degreeNames.length ? degreeNames[idx] : '';
 
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) {
-                        return InteractiveFretboardSheet(
-                          chordName: "$_root $modeName Scale",
-                          chordNotes: pack.scale,
-                          isScale: true,
-                          root: _root,
+                return Expanded(
+                  child: Semantics(
+                    button: true,
+                    label: '$note, $degree degree',
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) {
+                            return InteractiveFretboardSheet(
+                              chordName: "$_root $modeName Scale",
+                              chordNotes: pack.scale,
+                              isScale: true,
+                              root: _root,
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(right: idx == 6 ? 0 : 4),
-                    height: 38,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: noteBg,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: noteBorder.withOpacity(0.2)),
-                    ),
-                    child: Text(
-                      note,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: noteTxt,
-                        fontSize: 14,
+                      child: Container(
+                        margin: EdgeInsets.only(right: idx == 6 ? 0 : 4),
+                        height: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: noteBg,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: noteBorder.withOpacity(0.2)),
+                        ),
+                        child: Text(
+                          note,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: noteTxt,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
 
           const SizedBox(height: 20),

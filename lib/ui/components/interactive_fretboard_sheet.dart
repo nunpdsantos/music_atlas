@@ -207,31 +207,36 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
 
   Widget _buildToggleBtn(String label, int index, Color cardBg, Color textPrimary, Color textSecondary, bool isDark) {
     final bool isActive = _selectedInstrument == index;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedInstrument = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? cardBg : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.25 : 0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 14,
-            color: isActive ? textPrimary : textSecondary,
+    return Semantics(
+      button: true,
+      selected: isActive,
+      label: '$label instrument${isActive ? ', selected' : ''}',
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedInstrument = index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? cardBg : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.25 : 0.08),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              fontSize: 14,
+              color: isActive ? textPrimary : textSecondary,
+            ),
           ),
         ),
       ),

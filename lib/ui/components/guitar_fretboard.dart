@@ -103,7 +103,7 @@ class GuitarFretboardPainter extends CustomPainter {
     final double stringSpacing = availableHeight / 5;
 
     // ================================================
-    // 1. PREMIUM ROSEWOOD FRETBOARD BACKGROUND
+    // 1. PREMIUM EBONY FRETBOARD BACKGROUND
     // ================================================
     _drawFretboardBackground(canvas, size, boardStart, boardEnd, h, paddingY);
 
@@ -136,12 +136,12 @@ class GuitarFretboardPainter extends CustomPainter {
   void _drawFretboardBackground(Canvas canvas, Size size, double boardStart, double boardEnd, double h, double paddingY) {
     final Rect boardRect = Rect.fromLTRB(boardStart, 0, boardEnd, h);
 
-    // Rich rosewood gradient
+    // Rich ebony gradient - deep, almost black with subtle undertones
     final Paint woodBasePaint = Paint()
       ..shader = LinearGradient(
         colors: isDark
-          ? [const Color(0xFF2D1810), const Color(0xFF4A2C20), const Color(0xFF3D2218)]
-          : [const Color(0xFF3E1F14), const Color(0xFF5D3423), const Color(0xFF4A2819)],
+          ? [const Color(0xFF0A0A0A), const Color(0xFF151515), const Color(0xFF0D0D0D)]
+          : [const Color(0xFF121212), const Color(0xFF1C1C1C), const Color(0xFF141414)],
         stops: const [0.0, 0.5, 1.0],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
@@ -157,10 +157,10 @@ class GuitarFretboardPainter extends CustomPainter {
     );
     canvas.drawRRect(boardRRect, woodBasePaint);
 
-    // Add subtle wood grain texture effect
+    // Add very subtle wood grain texture effect (ebony has minimal grain)
     final Paint grainPaint = Paint()
-      ..color = Colors.black.withOpacity(0.08)
-      ..strokeWidth = 0.5;
+      ..color = Colors.white.withOpacity(0.03)
+      ..strokeWidth = 0.3;
 
     for (int i = 0; i < 30; i++) {
       double y = paddingY + (i * (h - paddingY * 2) / 30);
@@ -184,13 +184,13 @@ class GuitarFretboardPainter extends CustomPainter {
       ).createShader(boardRect);
     canvas.drawRRect(boardRRect, innerShadow);
 
-    // Outer subtle glow/border
+    // Outer subtle glow/border - enhanced for ebony contrast
     final Paint borderPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5
       ..color = isDark
-        ? Colors.white.withOpacity(0.05)
-        : Colors.black.withOpacity(0.1);
+        ? Colors.white.withOpacity(0.08)
+        : Colors.white.withOpacity(0.06);
     canvas.drawRRect(boardRRect, borderPaint);
   }
 

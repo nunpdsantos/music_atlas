@@ -44,14 +44,16 @@ class CircleScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         children: [
-          // 1. The Circle - entrance animation
+          // 1. The Circle - entrance animation with RepaintBoundary for performance
           AnimatedEntrance(
             duration: MotionTokens.medium,
             slideOffset: 0, // No slide, just fade + scale for the circle
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 340, maxHeight: 340),
-                child: const InteractiveCircle(),
+                child: const RepaintBoundary(
+                  child: InteractiveCircle(),
+                ),
               ),
             ),
           ),

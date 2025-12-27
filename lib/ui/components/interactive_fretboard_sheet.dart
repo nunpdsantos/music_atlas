@@ -316,17 +316,20 @@ class _InteractiveFretboardSheetState extends ConsumerState<InteractiveFretboard
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: GuitarFretboard(
-                tones: _safeTones,
-                root: widget.root,
-                octaves: 2,
-                leftHanded: _leftHanded,
-                scrollController: _scrollController,
-                fretWidth: fretWidth,
-                totalFrets: 12,
-                onNoteTap: (noteName, pitchClass, string, fret) {
-                  audioService.playPitchClass(pitchClass);
-                },
+              // RepaintBoundary isolates guitar fretboard repaints
+              child: RepaintBoundary(
+                child: GuitarFretboard(
+                  tones: _safeTones,
+                  root: widget.root,
+                  octaves: 2,
+                  leftHanded: _leftHanded,
+                  scrollController: _scrollController,
+                  fretWidth: fretWidth,
+                  totalFrets: 12,
+                  onNoteTap: (noteName, pitchClass, string, fret) {
+                    audioService.playPitchClass(pitchClass);
+                  },
+                ),
               ),
             ),
           ),
@@ -374,15 +377,18 @@ class _InteractiveFretboardSheetState extends ConsumerState<InteractiveFretboard
     final audioService = ref.read(audioServiceProvider);
 
     return Center(
-      child: PianoKeyboard(
-        tones: _safeTones,
-        root: widget.root,
-        octaves: 2,
-        startPc: startPc,
-        isDark: isDark,
-        onKeyTap: (noteName, pitchClass) {
-          audioService.playPitchClass(pitchClass);
-        },
+      // RepaintBoundary isolates piano keyboard repaints
+      child: RepaintBoundary(
+        child: PianoKeyboard(
+          tones: _safeTones,
+          root: widget.root,
+          octaves: 2,
+          startPc: startPc,
+          isDark: isDark,
+          onKeyTap: (noteName, pitchClass) {
+            audioService.playPitchClass(pitchClass);
+          },
+        ),
       ),
     );
   }

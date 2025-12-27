@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
+import '../../core/note_utils.dart';
 import '../../logic/theory_engine.dart';
 import '../../data/models.dart';
 import '../components/chord_card.dart';
@@ -272,6 +273,12 @@ class _ModesScreenState extends State<ModesScreen> {
               final idx = entry.key;
               final note = entry.value;
 
+              // Calculate interval from root for color
+              final rootPc = NoteUtils.pitchClass(_root);
+              final notePc = NoteUtils.pitchClass(note);
+              final interval = (notePc - rootPc + 12) % 12;
+              final intervalColor = AppTheme.getIntervalColorForMode(interval, isDark);
+
               return Expanded(
                 child: GestureDetector(
                   onTap: () {
@@ -294,15 +301,15 @@ class _ModesScreenState extends State<ModesScreen> {
                     height: 38,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: noteBg,
+                      color: intervalColor.withOpacity(isDark ? 0.2 : 0.15),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: noteBorder.withOpacity(0.2)),
+                      border: Border.all(color: intervalColor.withOpacity(0.4)),
                     ),
                     child: Text(
                       note,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: noteTxt,
+                        color: intervalColor,
                         fontSize: 14,
                       ),
                       overflow: TextOverflow.ellipsis,

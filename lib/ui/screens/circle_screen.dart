@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../logic/providers.dart';
 import '../../logic/theory_engine.dart';
 import '../../core/theme.dart';
+import '../../core/note_utils.dart';
 import '../../data/models.dart';
 import '../components/circle_of_fifths.dart';
 import '../components/chord_card.dart';
@@ -25,12 +26,10 @@ class CircleScreen extends ConsumerWidget {
     final textSecondary = AppTheme.getTextSecondary(context);
     final textPrimary = AppTheme.getTextPrimary(context);
     final cardBg = AppTheme.getCardBg(context);
-    final majorLight = AppTheme.getMajorLight(context);
-    final minorLight = AppTheme.getMinorLight(context);
+    final isDark = AppTheme.isDark(context);
 
-    final scaleBg = isMajor ? majorLight : minorLight;
-    final scaleText = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
-    final scaleBorder = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+    // Root note for interval calculations
+    final scaleRoot = pack.scale.isNotEmpty ? pack.scale.first : 'C';
 
     return Scaffold(
       appBar: AppBar(
@@ -80,6 +79,12 @@ class CircleScreen extends ConsumerWidget {
               final idx = entry.key;
               final note = entry.value;
 
+              // Calculate interval from root for color
+              final rootPc = NoteUtils.pitchClass(scaleRoot);
+              final notePc = NoteUtils.pitchClass(note);
+              final interval = (notePc - rootPc + 12) % 12;
+              final intervalColor = AppTheme.getIntervalColorForMode(interval, isDark);
+
               return Expanded(
                 child: GestureDetector(
                   onTap: () {
@@ -116,15 +121,15 @@ class CircleScreen extends ConsumerWidget {
                     height: 38,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: scaleBg,
+                      color: intervalColor.withOpacity(isDark ? 0.2 : 0.15),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: scaleBorder.withOpacity(0.1)),
+                      border: Border.all(color: intervalColor.withOpacity(0.4)),
                     ),
                     child: Text(
                       note,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: scaleText,
+                        color: intervalColor,
                         fontSize: 14,
                       ),
                     ),

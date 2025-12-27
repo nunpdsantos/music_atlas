@@ -3,9 +3,41 @@ import '../data/models.dart';
 import '../data/repository.dart';
 import '../core/note_utils.dart';
 
-enum KeyView { major, relativeMinor }
-enum MinorType { natural, harmonic, melodic }
+/// Represents the current view mode for displaying keys.
+enum KeyView {
+  /// Display major key information
+  major,
+  /// Display relative minor key information
+  relativeMinor
+}
 
+/// Types of minor scales supported.
+enum MinorType {
+  /// Natural minor (Aeolian mode)
+  natural,
+  /// Harmonic minor (raised 7th)
+  harmonic,
+  /// Melodic minor (raised 6th and 7th ascending)
+  melodic
+}
+
+/// Core music theory computation engine.
+///
+/// Provides static methods for generating scales, chords, and music theory
+/// data used throughout the application. Contains all the musical knowledge
+/// including key signatures, modes, and chord construction rules.
+///
+/// ## Usage
+/// ```dart
+/// // Build a triad pack for a major key
+/// final pack = TheoryEngine.buildMajorTriadPack('C');
+///
+/// // Get the relative minor of a key
+/// final relMinor = TheoryEngine.kRelativeMinors['C']; // 'A'
+///
+/// // Build a mode's scale and chords
+/// final dorian = TheoryEngine.buildModePack('D', 1, 'Dorian');
+/// ```
 class TheoryEngine {
   static const List<String> kCircleMajClock = [
     'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'Ab', 'Eb', 'Bb', 'F'

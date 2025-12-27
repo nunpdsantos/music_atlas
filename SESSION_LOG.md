@@ -9,21 +9,23 @@
 
 **Last Updated:** December 27, 2025
 **Session:** 2
-**Status:** Phase 1 nearly complete (~90% done)
+**Status:** Phase 1 COMPLETE
 
 ### Where We Are
 - Phase 0 (Foundation) is **COMPLETE**
-- Phase 1 (Polish & Persistence) is **IN PROGRESS** (~90% done)
+- Phase 1 (Polish & Persistence) is **COMPLETE**
 - Data Persistence is **COMPLETE**
 - Entrance Animations is **COMPLETE**
 - Accessibility (Semantics) is **COMPLETE**
-- Currently working on: **Dartdoc comments for public APIs**
+- Dartdoc Comments is **COMPLETE**
+- **Ready for Phase 2: Audio MVP**
 
 ### What To Do Next
 1. ~~Create animation utilities/tokens~~ **DONE**
 2. ~~Apply entrance animations to screens~~ **DONE** (CircleScreen, ModesScreen, SettingsScreen)
 3. ~~Add accessibility (Semantics) widgets~~ **DONE**
-4. Add dartdoc comments to public APIs
+4. ~~Add dartdoc comments to public APIs~~ **DONE**
+5. **Phase 1 Complete!** Ready to start Phase 2 (Audio MVP)
 
 ### Important Context
 - Baseline tag `v0.1.0-baseline` preserves original MVP state
@@ -48,6 +50,12 @@
    - Added Semantics to GuitarFretboard visualization
    - Added Semantics to PianoKeyboard visualization
 
+2. **Dartdoc Comments** (COMPLETE)
+   - Added class-level documentation to AppTheme with usage examples
+   - Added comprehensive dartdoc to TheoryEngine and enums
+   - Added dartdoc to all model classes (ChordDefinition, ChordQuality, TriadPack, TransposedChord)
+   - Documented all public methods and fields
+
 **Files Modified:**
 - `lib/ui/components/chord_card.dart` - Semantic labels for chord cards
 - `lib/ui/components/circle_of_fifths.dart` - Semantic labels for circle
@@ -56,6 +64,9 @@
 - `lib/ui/components/interactive_fretboard_sheet.dart` - Semantic labels for toggles
 - `lib/ui/screens/circle_screen.dart` - Semantic labels for interactive elements
 - `lib/ui/screens/modes_screen.dart` - Semantic labels for scale notes
+- `lib/core/theme.dart` - Class-level dartdoc
+- `lib/logic/theory_engine.dart` - Dartdoc for class and enums
+- `lib/data/models.dart` - Dartdoc for all model classes
 
 ---
 
@@ -111,7 +122,7 @@
 | Phase | Status | Session Started | Session Completed |
 |-------|--------|-----------------|-------------------|
 | Phase 0: Foundation | ✅ Complete | 1 | 1 |
-| Phase 1: Polish & Persistence | 🔄 In Progress | 1 | - |
+| Phase 1: Polish & Persistence | ✅ Complete | 1 | 2 |
 | Phase 2: Audio MVP | ⏳ Pending | - | - |
 | Phase 3: Advanced Interactions | ⏳ Pending | - | - |
 | Phase 4: Performance & Platform | ⏳ Pending | - | - |

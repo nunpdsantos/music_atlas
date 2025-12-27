@@ -48,8 +48,8 @@ class FretboardOverview extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   gradient: LinearGradient(
                     colors: isDark
-                        ? [const Color(0xFF2D1810), const Color(0xFF3D2218)]
-                        : [const Color(0xFF3E1F14), const Color(0xFF4A2819)],
+                        ? [const Color(0xFF1A1008), const Color(0xFF251810)]
+                        : [const Color(0xFF201408), const Color(0xFF2A1C10)],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),

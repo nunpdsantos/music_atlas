@@ -136,12 +136,12 @@ class GuitarFretboardPainter extends CustomPainter {
   void _drawFretboardBackground(Canvas canvas, Size size, double boardStart, double boardEnd, double h, double paddingY) {
     final Rect boardRect = Rect.fromLTRB(boardStart, 0, boardEnd, h);
 
-    // Rich ebony gradient - deep, almost black with subtle undertones
+    // Rich dark ebony gradient - very dark brown tones
     final Paint woodBasePaint = Paint()
       ..shader = LinearGradient(
         colors: isDark
-          ? [const Color(0xFF0A0A0A), const Color(0xFF151515), const Color(0xFF0D0D0D)]
-          : [const Color(0xFF121212), const Color(0xFF1C1C1C), const Color(0xFF141414)],
+          ? [const Color(0xFF1A1008), const Color(0xFF251810), const Color(0xFF1E140C)]
+          : [const Color(0xFF201408), const Color(0xFF2A1C10), const Color(0xFF24180C)],
         stops: const [0.0, 0.5, 1.0],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,

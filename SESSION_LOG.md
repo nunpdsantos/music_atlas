@@ -13,9 +13,10 @@
 
 ### Where We Are
 - Phase 0 (Foundation) is **COMPLETE**
-- Phase 1 (Polish & Persistence) is **IN PROGRESS**
+- Phase 1 (Polish & Persistence) is **IN PROGRESS** (~75% done)
 - Data Persistence is **COMPLETE**
-- Currently working on: **Entrance Animations**
+- Entrance Animations is **COMPLETE**
+- Currently working on: **Accessibility (Semantics)**
 
 ### What To Do Next
 1. ~~Create animation utilities/tokens~~ **DONE**

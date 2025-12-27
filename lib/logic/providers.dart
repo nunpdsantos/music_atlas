@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/audio_service.dart';
 import '../core/persistence_service.dart';
 import '../data/models.dart';
 import '../data/repository.dart';
@@ -15,6 +16,11 @@ final persistenceServiceProvider = Provider<PersistenceService>((ref) {
   return PersistenceService();
 });
 
+/// Singleton audio service for playing notes and chords.
+final audioServiceProvider = Provider<AudioService>((ref) {
+  return AudioService();
+});
+
 /// Singleton repository for chord data access.
 final repositoryProvider = Provider<MusicRepository>((ref) => MusicRepository());
 
@@ -24,6 +30,10 @@ final appInitProvider = FutureProvider<void>((ref) async {
   // Initialize persistence first
   final persistence = ref.read(persistenceServiceProvider);
   await persistence.initialize();
+
+  // Initialize audio service
+  final audio = ref.read(audioServiceProvider);
+  await audio.initialize();
 
   // Load chord repository
   await ref.read(repositoryProvider).initialize();

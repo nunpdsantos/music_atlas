@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
 import '../../core/note_utils.dart';
+import '../../logic/providers.dart';
 import 'guitar_fretboard.dart';
 import 'piano_keyboard.dart';
 import 'fretboard_overview.dart';
@@ -8,7 +10,9 @@ import 'fretboard_overview.dart';
 /// Premium interactive instrument sheet with elegant design.
 /// Provides a polished interface for visualizing chords and scales
 /// on guitar fretboard and piano keyboard.
-class InteractiveFretboardSheet extends StatefulWidget {
+///
+/// Supports audio playback when tapping notes (requires audio samples).
+class InteractiveFretboardSheet extends ConsumerStatefulWidget {
   final String? chordName;
   final String? title;
   final List<String>? tones;
@@ -29,10 +33,10 @@ class InteractiveFretboardSheet extends StatefulWidget {
   });
 
   @override
-  State<InteractiveFretboardSheet> createState() => _InteractiveFretboardSheetState();
+  ConsumerState<InteractiveFretboardSheet> createState() => _InteractiveFretboardSheetState();
 }
 
-class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
+class _InteractiveFretboardSheetState extends ConsumerState<InteractiveFretboardSheet> {
   int _selectedInstrument = 0; // 0 = Guitar, 1 = Piano
   late ScrollController _scrollController;
 
@@ -294,6 +298,7 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
     final double screenWidth = MediaQuery.of(context).size.width - 40;
     final double fretWidth = screenWidth / 5.0;
     final double contentWidth = fretWidth * 12;
+    final audioService = ref.read(audioServiceProvider);
 
     return Column(
       children: [
@@ -319,6 +324,9 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
                 scrollController: _scrollController,
                 fretWidth: fretWidth,
                 totalFrets: 12,
+                onNoteTap: (noteName, pitchClass, string, fret) {
+                  audioService.playPitchClass(pitchClass);
+                },
               ),
             ),
           ),
@@ -363,6 +371,7 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
   Widget _buildPianoLayout(BuildContext context, bool isDark) {
     final rootPc = NoteUtils.pitchClass(widget.root);
     final startPc = rootPc >= 0 ? rootPc : 0;
+    final audioService = ref.read(audioServiceProvider);
 
     return Center(
       child: PianoKeyboard(
@@ -371,6 +380,9 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
         octaves: 2,
         startPc: startPc,
         isDark: isDark,
+        onKeyTap: (noteName, pitchClass) {
+          audioService.playPitchClass(pitchClass);
+        },
       ),
     );
   }

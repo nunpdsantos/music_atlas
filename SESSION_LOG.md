@@ -8,24 +8,26 @@
 ## CURRENT CHECKPOINT
 
 **Last Updated:** December 27, 2025
-**Session:** 2
-**Status:** Phase 1 COMPLETE
+**Session:** 2 (continued)
+**Status:** Phase 2 IN PROGRESS
 
 ### Where We Are
 - Phase 0 (Foundation) is **COMPLETE**
 - Phase 1 (Polish & Persistence) is **COMPLETE**
-- Data Persistence is **COMPLETE**
-- Entrance Animations is **COMPLETE**
-- Accessibility (Semantics) is **COMPLETE**
-- Dartdoc Comments is **COMPLETE**
-- **Ready for Phase 2: Audio MVP**
+- Phase 2 (Audio MVP) is **IN PROGRESS**
+  - Audio infrastructure is **COMPLETE**
+  - Tap-to-play functionality is **COMPLETE** (wired up to instruments)
+  - Audio samples are **PENDING** (requires actual .mp3/.wav files)
 
 ### What To Do Next
-1. ~~Create animation utilities/tokens~~ **DONE**
-2. ~~Apply entrance animations to screens~~ **DONE** (CircleScreen, ModesScreen, SettingsScreen)
-3. ~~Add accessibility (Semantics) widgets~~ **DONE**
-4. ~~Add dartdoc comments to public APIs~~ **DONE**
-5. **Phase 1 Complete!** Ready to start Phase 2 (Audio MVP)
+1. ~~Add just_audio dependency~~ **DONE**
+2. ~~Create AudioService with polyphonic playback~~ **DONE**
+3. ~~Add tap-to-play to PianoKeyboard~~ **DONE**
+4. ~~Add tap-to-play to GuitarFretboard~~ **DONE**
+5. ~~Wire up audio in InteractiveFretboardSheet~~ **DONE**
+6. **Acquire piano/guitar audio samples** (12 pitch classes minimum)
+7. Test audio playback end-to-end
+8. Add chord arpeggio playback feature
 
 ### Important Context
 - Baseline tag `v0.1.0-baseline` preserves original MVP state
@@ -36,6 +38,39 @@
 ---
 
 ## SESSION HISTORY
+
+### Session 2 (continued) - December 27, 2025
+
+**Completed:**
+1. **Phase 2: Audio Infrastructure** (COMPLETE)
+   - Added `just_audio: ^0.9.39` dependency
+   - Created `lib/core/audio_service.dart` with:
+     - Polyphonic playback (6 voices with round-robin allocation)
+     - `playNote()`, `playChord()`, `playPitchClass()` methods
+     - Graceful handling of missing audio files
+   - Added `audioServiceProvider` to Riverpod providers
+   - Updated `appInitProvider` to initialize audio service
+   - Created `assets/audio/` directory for samples
+
+2. **Tap-to-Play Functionality** (COMPLETE)
+   - Added `OnKeyTap` callback to PianoKeyboard with position detection
+   - Added `OnNoteTap` callback to GuitarFretboard with string/fret detection
+   - Converted InteractiveFretboardSheet to ConsumerStatefulWidget
+   - Wired up audio playback for both piano and guitar views
+   - Added haptic feedback option (enabled by default)
+
+**Files Created:**
+- `lib/core/audio_service.dart` - Audio playback service
+- `assets/audio/.gitkeep` - Placeholder for audio samples
+
+**Files Modified:**
+- `pubspec.yaml` - Added just_audio dependency and audio assets
+- `lib/logic/providers.dart` - Added audioServiceProvider
+- `lib/ui/components/piano_keyboard.dart` - Added tap detection and callback
+- `lib/ui/components/guitar_fretboard.dart` - Added tap detection and callback
+- `lib/ui/components/interactive_fretboard_sheet.dart` - Wired up audio playback
+
+---
 
 ### Session 2 - December 27, 2025
 
@@ -123,7 +158,7 @@
 |-------|--------|-----------------|-------------------|
 | Phase 0: Foundation | ✅ Complete | 1 | 1 |
 | Phase 1: Polish & Persistence | ✅ Complete | 1 | 2 |
-| Phase 2: Audio MVP | ⏳ Pending | - | - |
+| Phase 2: Audio MVP | 🔄 In Progress | 2 | - |
 | Phase 3: Advanced Interactions | ⏳ Pending | - | - |
 | Phase 4: Performance & Platform | ⏳ Pending | - | - |
 

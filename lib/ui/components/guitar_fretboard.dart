@@ -1,7 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme.dart';
 import '../../core/note_utils.dart';
+
+/// Callback for when a fretboard note is tapped.
+/// Provides the note name, pitch class, string number (0-5), and fret number.
+typedef OnNoteTap = void Function(String noteName, int pitchClass, int string, int fret);
 
 class GuitarFretboard extends StatefulWidget {
   final List<String> tones;
@@ -15,6 +20,12 @@ class GuitarFretboard extends StatefulWidget {
   final double fretWidth;
   final int totalFrets;
 
+  /// Optional callback when a note is tapped. If null, notes are not interactive.
+  final OnNoteTap? onNoteTap;
+
+  /// Whether to provide haptic feedback on note tap
+  final bool enableHaptics;
+
   const GuitarFretboard({
     super.key,
     required this.tones,
@@ -25,6 +36,8 @@ class GuitarFretboard extends StatefulWidget {
     this.scrollController,
     required this.fretWidth,
     this.totalFrets = 12,
+    this.onNoteTap,
+    this.enableHaptics = true,
   });
 
   @override
@@ -34,10 +47,58 @@ class GuitarFretboard extends StatefulWidget {
 class _GuitarFretboardState extends State<GuitarFretboard> {
   late ScrollController _scrollController;
 
+  // Standard guitar tuning MIDI notes: E2, A2, D3, G3, B3, E4
+  static const List<int> _openStringMidi = [40, 45, 50, 55, 59, 64];
+
   @override
   void initState() {
     super.initState();
     _scrollController = widget.scrollController ?? ScrollController();
+  }
+
+  /// Handle tap on the fretboard and determine which note was pressed.
+  void _handleTap(Offset position, double contentWidth, double nutPadding) {
+    final paddingY = 28.0;
+    final availableHeight = widget.height - (paddingY * 2);
+    final stringSpacing = availableHeight / 5;
+
+    // Determine which string was tapped (0-5, top to bottom)
+    final stringIndex = ((position.dy - paddingY) / stringSpacing).round().clamp(0, 5);
+
+    // Determine which fret was tapped
+    final boardStart = widget.leftHanded ? 0.0 : nutPadding;
+    final boardEnd = widget.leftHanded ? contentWidth - nutPadding : contentWidth;
+
+    int fret;
+    if (widget.leftHanded) {
+      // Left-handed: nut on right, frets go left
+      if (position.dx > boardEnd) {
+        fret = 0; // Open string
+      } else {
+        fret = ((boardEnd - position.dx) / widget.fretWidth).ceil().clamp(1, widget.totalFrets);
+      }
+    } else {
+      // Right-handed: nut on left, frets go right
+      if (position.dx < boardStart) {
+        fret = 0; // Open string
+      } else {
+        fret = ((position.dx - boardStart) / widget.fretWidth).ceil().clamp(1, widget.totalFrets);
+      }
+    }
+
+    // Calculate the MIDI note and pitch class
+    final midi = _openStringMidi[stringIndex] + fret;
+    final pitchClass = midi % 12;
+    final noteName = NoteUtils.pitchClassToNote(pitchClass);
+
+    // Only trigger for notes that are in the displayed tones
+    final isNoteDisplayed = widget.tones.any((t) => NoteUtils.pitchClass(t) == pitchClass);
+    if (isNoteDisplayed && widget.onNoteTap != null) {
+      if (widget.enableHaptics) {
+        HapticFeedback.lightImpact();
+      }
+      widget.onNoteTap?.call(noteName, pitchClass, stringIndex, fret);
+    }
   }
 
   @override
@@ -60,18 +121,23 @@ class _GuitarFretboardState extends State<GuitarFretboard> {
       child: SingleChildScrollView(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: contentWidth,
-          height: widget.height,
-          child: CustomPaint(
-            painter: GuitarFretboardPainter(
-              tones: widget.tones,
-              root: widget.root,
-              leftHanded: widget.leftHanded,
-              fretWidth: widget.fretWidth,
-              totalFrets: widget.totalFrets,
-              nutPadding: nutPadding,
-              isDark: isDark,
+        child: GestureDetector(
+          onTapDown: widget.onNoteTap != null
+              ? (details) => _handleTap(details.localPosition, contentWidth, nutPadding)
+              : null,
+          child: SizedBox(
+            width: contentWidth,
+            height: widget.height,
+            child: CustomPaint(
+              painter: GuitarFretboardPainter(
+                tones: widget.tones,
+                root: widget.root,
+                leftHanded: widget.leftHanded,
+                fretWidth: widget.fretWidth,
+                totalFrets: widget.totalFrets,
+                nutPadding: nutPadding,
+                isDark: isDark,
+              ),
             ),
           ),
         ),

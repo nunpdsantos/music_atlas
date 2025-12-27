@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/note_utils.dart';
 import '../../core/theme.dart';
+
+/// Callback for when a piano key is tapped.
+/// Provides the note name and pitch class.
+typedef OnKeyTap = void Function(String noteName, int pitchClass);
 
 /// Premium scrollable piano keyboard with realistic 3D appearance.
 /// Features elegant ivory and ebony keys with proper lighting and depth.
@@ -8,6 +13,7 @@ import '../../core/theme.dart';
 /// Highlights:
 /// - root notes (filled colored circle with glow)
 /// - other tones (elegant outlined circle with note name)
+/// - tap-to-play functionality when [onKeyTap] is provided
 class PianoKeyboard extends StatelessWidget {
   final List<String> tones;
   final String root;
@@ -17,6 +23,12 @@ class PianoKeyboard extends StatelessWidget {
   /// Starting pitch class (0 = C). You can change this if you want the keyboard to start elsewhere.
   final int startPc;
 
+  /// Optional callback when a key is tapped. If null, keys are not interactive.
+  final OnKeyTap? onKeyTap;
+
+  /// Whether to provide haptic feedback on key tap
+  final bool enableHaptics;
+
   const PianoKeyboard({
     super.key,
     required this.tones,
@@ -24,7 +36,65 @@ class PianoKeyboard extends StatelessWidget {
     this.octaves = 1,
     this.startPc = 0,
     this.isDark = false,
+    this.onKeyTap,
+    this.enableHaptics = true,
   });
+
+  // White key pitch classes in order (C D E F G A B)
+  static const List<int> _whitePcs = [0, 2, 4, 5, 7, 9, 11];
+
+  // Black key positions (after which white key index)
+  static const List<int> _blackKeyPositions = [0, 1, 3, 4, 5]; // C# D# F# G# A#
+  static const List<int> _blackKeyPcs = [1, 3, 6, 8, 10];
+
+  /// Handle tap on the keyboard and determine which key was pressed.
+  void _handleTap(Offset position, double keyboardWidth) {
+    final effectiveOctaves = octaves <= 1 ? 1 : 2;
+    final whiteKeyCount = 7 * effectiveOctaves;
+    final whiteKeyWidth = keyboardWidth / whiteKeyCount;
+    final blackKeyWidth = whiteKeyWidth * 0.58;
+    final blackKeyHeight = 220 * 0.62;
+
+    // First check if tap is on a black key (they're on top)
+    if (position.dy < blackKeyHeight) {
+      for (int oct = 0; oct < effectiveOctaves; oct++) {
+        final baseWhiteIndex = oct * 7;
+
+        for (int i = 0; i < _blackKeyPositions.length; i++) {
+          final leftWhite = baseWhiteIndex + _blackKeyPositions[i];
+          if (leftWhite >= whiteKeyCount - 1) continue;
+
+          // Calculate black key position
+          final xCenter = (leftWhite + 1) * whiteKeyWidth;
+          final blackX = xCenter - blackKeyWidth / 2 - whiteKeyWidth * 0.08;
+
+          if (position.dx >= blackX && position.dx <= blackX + blackKeyWidth) {
+            final pitchClass = (_blackKeyPcs[i] + startPc) % 12;
+            final noteName = NoteUtils.pitchClassToNote(pitchClass);
+
+            if (enableHaptics) {
+              HapticFeedback.lightImpact();
+            }
+            onKeyTap?.call(noteName, pitchClass);
+            return;
+          }
+        }
+      }
+    }
+
+    // Must be a white key
+    final whiteKeyIndex = (position.dx / whiteKeyWidth).floor();
+    if (whiteKeyIndex >= 0 && whiteKeyIndex < whiteKeyCount) {
+      final degree = whiteKeyIndex % 7;
+      final pitchClass = (_whitePcs[degree] + startPc) % 12;
+      final noteName = NoteUtils.pitchClassToNote(pitchClass);
+
+      if (enableHaptics) {
+        HapticFeedback.lightImpact();
+      }
+      onKeyTap?.call(noteName, pitchClass);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,16 +180,21 @@ class PianoKeyboard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: keyboardWidth,
-                      height: 220,
-                      child: CustomPaint(
-                        painter: _PremiumPianoPainter(
-                          tones: tones,
-                          root: root,
-                          octaves: octaves <= 1 ? 1 : 2,
-                          startPc: startPc,
-                          isDark: isDark,
+                    child: GestureDetector(
+                      onTapDown: onKeyTap != null
+                          ? (details) => _handleTap(details.localPosition, keyboardWidth)
+                          : null,
+                      child: SizedBox(
+                        width: keyboardWidth,
+                        height: 220,
+                        child: CustomPaint(
+                          painter: _PremiumPianoPainter(
+                            tones: tones,
+                            root: root,
+                            octaves: octaves <= 1 ? 1 : 2,
+                            startPc: startPc,
+                            isDark: isDark,
+                          ),
                         ),
                       ),
                     ),

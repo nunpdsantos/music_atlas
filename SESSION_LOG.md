@@ -18,10 +18,10 @@
 - Currently working on: **Entrance Animations**
 
 ### What To Do Next
-1. Create animation utilities/tokens (`lib/core/motion_tokens.dart`)
-2. Add entrance animations to screens
-3. Implement staggered list animations for chord cards
-4. Add accessibility (Semantics) widgets
+1. ~~Create animation utilities/tokens~~ **DONE**
+2. Apply entrance animations to existing screens (wrap components with AnimatedEntrance)
+3. Add accessibility (Semantics) widgets
+4. Add dartdoc comments to public APIs
 
 ### Important Context
 - Baseline tag `v0.1.0-baseline` preserves original MVP state
@@ -64,12 +64,17 @@
   - Created `lib/core/persistence_service.dart`
   - Updated providers to load/save settings automatically
   - Created tests for persistence service
-- Phase 1: Entrance Animations (next task)
+- Phase 1: Entrance Animations - **IN PROGRESS**
+  - Created `lib/core/motion_tokens.dart` (animation constants)
+  - Created `lib/ui/components/animated_entrance.dart` (reusable widgets)
+  - Created tests for motion tokens
+  - **Next:** Apply animations to screens
 
 **Commits:**
 1. `51c36cf` - Add implementation plan with baseline snapshot documentation
 2. `43afe42` - Complete Phase 0: Testing infrastructure and code quality
-3. (pending) - Add data persistence with SharedPreferences
+3. `f9ea2d6` - Add data persistence with SharedPreferences
+4. (pending) - Add animation foundation (motion tokens, animated components)
 
 ---
 

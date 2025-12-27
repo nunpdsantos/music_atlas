@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/note_utils.dart';
 import '../../core/theme.dart';
+
+/// Callback for when a piano key is tapped.
+/// Provides the note name and pitch class.
+typedef OnKeyTap = void Function(String noteName, int pitchClass);
 
 /// Premium scrollable piano keyboard with realistic 3D appearance.
 /// Features elegant ivory and ebony keys with proper lighting and depth.
@@ -8,7 +13,9 @@ import '../../core/theme.dart';
 /// Highlights:
 /// - root notes (filled colored circle with glow)
 /// - other tones (elegant outlined circle with note name)
-class PianoKeyboard extends StatelessWidget {
+/// - tap-to-play functionality when [onKeyTap] is provided
+/// - animated key press visual feedback
+class PianoKeyboard extends StatefulWidget {
   final List<String> tones;
   final String root;
   final int octaves;
@@ -17,6 +24,12 @@ class PianoKeyboard extends StatelessWidget {
   /// Starting pitch class (0 = C). You can change this if you want the keyboard to start elsewhere.
   final int startPc;
 
+  /// Optional callback when a key is tapped. If null, keys are not interactive.
+  final OnKeyTap? onKeyTap;
+
+  /// Whether to provide haptic feedback on key tap
+  final bool enableHaptics;
+
   const PianoKeyboard({
     super.key,
     required this.tones,
@@ -24,33 +37,170 @@ class PianoKeyboard extends StatelessWidget {
     this.octaves = 1,
     this.startPc = 0,
     this.isDark = false,
+    this.onKeyTap,
+    this.enableHaptics = true,
   });
 
   @override
+  State<PianoKeyboard> createState() => _PianoKeyboardState();
+}
+
+class _PianoKeyboardState extends State<PianoKeyboard> with SingleTickerProviderStateMixin {
+  // White key pitch classes in order (C D E F G A B)
+  static const List<int> _whitePcs = [0, 2, 4, 5, 7, 9, 11];
+
+  // Black key positions (after which white key index)
+  static const List<int> _blackKeyPositions = [0, 1, 3, 4, 5]; // C# D# F# G# A#
+  static const List<int> _blackKeyPcs = [1, 3, 6, 8, 10];
+
+  /// Currently pressed key index (-1 for none, 0-6 for white keys in first octave,
+  /// 7-13 for second octave, 100+ for black keys encoded as 100 + octave*5 + blackIndex)
+  int? _pressedKeyIndex;
+
+  /// Animation controller for key press effect
+  late AnimationController _pressAnimController;
+  late Animation<double> _pressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressAnimController = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+    _pressAnimation = CurvedAnimation(
+      parent: _pressAnimController,
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressAnimController.dispose();
+    super.dispose();
+  }
+
+  /// Handle tap down - show pressed state
+  void _handleTapDown(TapDownDetails details, double keyboardWidth) {
+    final keyInfo = _getKeyAtPosition(details.localPosition, keyboardWidth);
+    if (keyInfo != null) {
+      setState(() => _pressedKeyIndex = keyInfo.index);
+      _pressAnimController.forward(from: 0);
+    }
+  }
+
+  /// Handle tap up - trigger callback and release
+  void _handleTapUp(TapUpDetails details, double keyboardWidth) {
+    final keyInfo = _getKeyAtPosition(details.localPosition, keyboardWidth);
+    if (keyInfo != null) {
+      if (widget.enableHaptics) {
+        HapticFeedback.lightImpact();
+      }
+      widget.onKeyTap?.call(keyInfo.noteName, keyInfo.pitchClass);
+    }
+    _releaseKey();
+  }
+
+  /// Handle tap cancel - release without triggering
+  void _handleTapCancel() {
+    _releaseKey();
+  }
+
+  void _releaseKey() {
+    _pressAnimController.reverse().then((_) {
+      if (mounted) {
+        setState(() => _pressedKeyIndex = null);
+      }
+    });
+  }
+
+  /// Get key info at a given position
+  _KeyInfo? _getKeyAtPosition(Offset position, double keyboardWidth) {
+    final effectiveOctaves = widget.octaves <= 1 ? 1 : 2;
+    final whiteKeyCount = 7 * effectiveOctaves;
+    final whiteKeyWidth = keyboardWidth / whiteKeyCount;
+    final blackKeyWidth = whiteKeyWidth * 0.58;
+    final blackKeyHeight = 220 * 0.62;
+
+    // First check if tap is on a black key (they're on top)
+    if (position.dy < blackKeyHeight) {
+      for (int oct = 0; oct < effectiveOctaves; oct++) {
+        final baseWhiteIndex = oct * 7;
+
+        for (int i = 0; i < _blackKeyPositions.length; i++) {
+          final leftWhite = baseWhiteIndex + _blackKeyPositions[i];
+          if (leftWhite >= whiteKeyCount - 1) continue;
+
+          // Calculate black key position
+          final xCenter = (leftWhite + 1) * whiteKeyWidth;
+          final blackX = xCenter - blackKeyWidth / 2 - whiteKeyWidth * 0.08;
+
+          if (position.dx >= blackX && position.dx <= blackX + blackKeyWidth) {
+            final pitchClass = (_blackKeyPcs[i] + widget.startPc) % 12;
+            final noteName = NoteUtils.pitchClassToNote(pitchClass);
+            // Encode black key index: 100 + octave*5 + blackKeyIndex
+            return _KeyInfo(
+              index: 100 + oct * 5 + i,
+              noteName: noteName,
+              pitchClass: pitchClass,
+              isBlack: true,
+            );
+          }
+        }
+      }
+    }
+
+    // Must be a white key
+    final whiteKeyIndex = (position.dx / whiteKeyWidth).floor();
+    if (whiteKeyIndex >= 0 && whiteKeyIndex < whiteKeyCount) {
+      final degree = whiteKeyIndex % 7;
+      final pitchClass = (_whitePcs[degree] + widget.startPc) % 12;
+      final noteName = NoteUtils.pitchClassToNote(pitchClass);
+      return _KeyInfo(
+        index: whiteKeyIndex,
+        noteName: noteName,
+        pitchClass: pitchClass,
+        isBlack: false,
+      );
+    }
+    return null;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final totalWhiteKeys = 7 * (octaves <= 1 ? 1 : 2);
+    final totalWhiteKeys = 7 * (widget.octaves <= 1 ? 1 : 2);
     const whiteKeyWidth = 52.0;
     final keyboardWidth = totalWhiteKeys * whiteKeyWidth;
 
     // Premium case colors
-    final caseColor = isDark
+    final caseColor = widget.isDark
         ? const Color(0xFF1A1A2E)
         : const Color(0xFF2D2D3A);
-    final caseHighlight = isDark
+    final caseHighlight = widget.isDark
         ? const Color(0xFF252538)
         : const Color(0xFF3D3D4A);
 
-    return Container(
+    // Build semantic description for accessibility
+    final notesDescription = widget.tones.isNotEmpty
+        ? 'Notes highlighted: ${widget.tones.join(", ")}'
+        : 'No notes highlighted';
+    final semanticLabel = 'Piano keyboard visualization. '
+        'Root: ${widget.root}. $notesDescription. '
+        '${widget.octaves > 1 ? "Swipe horizontally to see more keys." : ""}';
+
+    return Semantics(
+      label: semanticLabel,
+      child: Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.4 : 0.2),
+            color: Colors.black.withOpacity(widget.isDark ? 0.4 : 0.2),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.1),
+            color: Colors.black.withOpacity(widget.isDark ? 0.2 : 0.1),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -100,17 +250,35 @@ class PianoKeyboard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: keyboardWidth,
-                      height: 220,
-                      child: CustomPaint(
-                        painter: _PremiumPianoPainter(
-                          tones: tones,
-                          root: root,
-                          octaves: octaves <= 1 ? 1 : 2,
-                          startPc: startPc,
-                          isDark: isDark,
-                        ),
+                    child: GestureDetector(
+                      onTapDown: widget.onKeyTap != null
+                          ? (details) => _handleTapDown(details, keyboardWidth)
+                          : null,
+                      onTapUp: widget.onKeyTap != null
+                          ? (details) => _handleTapUp(details, keyboardWidth)
+                          : null,
+                      onTapCancel: widget.onKeyTap != null
+                          ? _handleTapCancel
+                          : null,
+                      child: AnimatedBuilder(
+                        animation: _pressAnimation,
+                        builder: (context, child) {
+                          return SizedBox(
+                            width: keyboardWidth,
+                            height: 220,
+                            child: CustomPaint(
+                              painter: _PremiumPianoPainter(
+                                tones: widget.tones,
+                                root: widget.root,
+                                octaves: widget.octaves <= 1 ? 1 : 2,
+                                startPc: widget.startPc,
+                                isDark: widget.isDark,
+                                pressedKeyIndex: _pressedKeyIndex,
+                                pressAmount: _pressAnimation.value,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -120,8 +288,24 @@ class PianoKeyboard extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
+}
+
+/// Information about a piano key
+class _KeyInfo {
+  final int index;
+  final String noteName;
+  final int pitchClass;
+  final bool isBlack;
+
+  _KeyInfo({
+    required this.index,
+    required this.noteName,
+    required this.pitchClass,
+    required this.isBlack,
+  });
 }
 
 class _PremiumPianoPainter extends CustomPainter {
@@ -130,6 +314,8 @@ class _PremiumPianoPainter extends CustomPainter {
   final int octaves;
   final int startPc;
   final bool isDark;
+  final int? pressedKeyIndex;
+  final double pressAmount;
 
   _PremiumPianoPainter({
     required this.tones,
@@ -137,6 +323,8 @@ class _PremiumPianoPainter extends CustomPainter {
     required this.octaves,
     required this.startPc,
     required this.isDark,
+    this.pressedKeyIndex,
+    this.pressAmount = 0.0,
   });
 
   static const List<int> _whitePcs = <int>[0, 2, 4, 5, 7, 9, 11]; // C D E F G A B
@@ -162,7 +350,11 @@ class _PremiumPianoPainter extends CustomPainter {
       final x = i * whiteW;
       final isFirst = i == 0;
       final isLast = i == whiteKeyCount - 1;
-      _drawWhiteKey(canvas, x, whiteW, whiteH, isFirst, isLast);
+      // Check if this white key is pressed (index < 100 means white key)
+      final isPressed = pressedKeyIndex != null &&
+          pressedKeyIndex! < 100 &&
+          pressedKeyIndex == i;
+      _drawWhiteKey(canvas, x, whiteW, whiteH, isFirst, isLast, isPressed ? pressAmount : 0.0);
     }
 
     // Draw note markers on white keys
@@ -179,7 +371,8 @@ class _PremiumPianoPainter extends CustomPainter {
       // Black key positions: after C, D, F, G, A
       final blackPositions = [0, 1, 3, 4, 5];
 
-      for (final pos in blackPositions) {
+      for (int i = 0; i < blackPositions.length; i++) {
+        final pos = blackPositions[i];
         final leftWhite = baseWhiteIndex + pos;
         if (leftWhite >= whiteKeyCount - 1) continue;
 
@@ -189,7 +382,11 @@ class _PremiumPianoPainter extends CustomPainter {
         final xCenter = (leftWhite + 1) * whiteW;
         final blackX = xCenter - blackW / 2 - whiteW * 0.08;
 
-        _drawBlackKey(canvas, blackX, blackW, blackH);
+        // Check if this black key is pressed (index >= 100)
+        // Black key index encoding: 100 + octave*5 + blackKeyIndex
+        final blackKeyEncodedIndex = 100 + oct * 5 + i;
+        final isPressed = pressedKeyIndex == blackKeyEncodedIndex;
+        _drawBlackKey(canvas, blackX, blackW, blackH, isPressed ? pressAmount : 0.0);
 
         // Draw marker on black key
         _drawMarkerIfNeeded(
@@ -219,9 +416,11 @@ class _PremiumPianoPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), basePaint);
   }
 
-  void _drawWhiteKey(Canvas canvas, double x, double width, double height, bool isFirst, bool isLast) {
+  void _drawWhiteKey(Canvas canvas, double x, double width, double height, bool isFirst, bool isLast, double pressAmount) {
     final keyGap = 1.0;
-    final keyRect = Rect.fromLTWH(x + keyGap / 2, 0, width - keyGap, height);
+    // Apply press effect: key appears to move down slightly
+    final pressOffset = pressAmount * 3.0;
+    final keyRect = Rect.fromLTWH(x + keyGap / 2, pressOffset, width - keyGap, height - pressOffset);
 
     // Key body with rounded bottom
     final RRect keyRRect = RRect.fromRectAndCorners(
@@ -230,31 +429,35 @@ class _PremiumPianoPainter extends CustomPainter {
       bottomRight: Radius.circular(isLast ? 6 : 4),
     );
 
+    // Pressed keys are slightly darker
+    final pressedDarken = pressAmount * 0.08;
+
     // Main ivory gradient (top to bottom for 3D effect)
     final Paint ivoryGradient = Paint()
       ..shader = LinearGradient(
         colors: isDark
             ? [
-                const Color(0xFFE8E4DC),
-                const Color(0xFFF5F2EB),
-                const Color(0xFFEAE6DE),
-                const Color(0xFFDDD9D0),
+                Color.lerp(const Color(0xFFE8E4DC), Colors.black, pressedDarken)!,
+                Color.lerp(const Color(0xFFF5F2EB), Colors.black, pressedDarken)!,
+                Color.lerp(const Color(0xFFEAE6DE), Colors.black, pressedDarken)!,
+                Color.lerp(const Color(0xFFDDD9D0), Colors.black, pressedDarken)!,
               ]
             : [
-                const Color(0xFFFFFEFA),
-                const Color(0xFFFFFDF8),
-                const Color(0xFFF8F5EE),
-                const Color(0xFFEDE9E0),
+                Color.lerp(const Color(0xFFFFFEFA), Colors.black, pressedDarken)!,
+                Color.lerp(const Color(0xFFFFFDF8), Colors.black, pressedDarken)!,
+                Color.lerp(const Color(0xFFF8F5EE), Colors.black, pressedDarken)!,
+                Color.lerp(const Color(0xFFEDE9E0), Colors.black, pressedDarken)!,
               ],
         stops: const [0.0, 0.15, 0.85, 1.0],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(keyRect);
 
-    // Drop shadow for key depth
+    // Drop shadow for key depth (reduced when pressed)
+    final shadowOpacity = 0.15 * (1.0 - pressAmount * 0.7);
     canvas.drawRRect(
-      keyRRect.shift(const Offset(0, 2)),
-      Paint()..color = Colors.black.withOpacity(0.15),
+      keyRRect.shift(Offset(0, 2 * (1.0 - pressAmount))),
+      Paint()..color = Colors.black.withOpacity(shadowOpacity),
     );
 
     // Main key body
@@ -264,20 +467,21 @@ class _PremiumPianoPainter extends CustomPainter {
     final Paint leftShadow = Paint()
       ..shader = LinearGradient(
         colors: [
-          Colors.black.withOpacity(0.08),
+          Colors.black.withOpacity(0.08 + pressAmount * 0.04),
           Colors.transparent,
         ],
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
-      ).createShader(Rect.fromLTWH(x, 0, 4, height));
-    canvas.drawRect(Rect.fromLTWH(x + keyGap / 2, 0, 3, height), leftShadow);
+      ).createShader(Rect.fromLTWH(x, pressOffset, 4, height - pressOffset));
+    canvas.drawRect(Rect.fromLTWH(x + keyGap / 2, pressOffset, 3, height - pressOffset), leftShadow);
 
-    // Top edge highlight (simulates light from above)
+    // Top edge highlight (simulates light from above) - dimmed when pressed
+    final highlightOpacity = 0.7 * (1.0 - pressAmount * 0.5);
     canvas.drawLine(
-      Offset(x + keyGap / 2 + 2, 1),
-      Offset(x + width - keyGap / 2 - 2, 1),
+      Offset(x + keyGap / 2 + 2, pressOffset + 1),
+      Offset(x + width - keyGap / 2 - 2, pressOffset + 1),
       Paint()
-        ..color = Colors.white.withOpacity(0.7)
+        ..color = Colors.white.withOpacity(highlightOpacity)
         ..strokeWidth = 1,
     );
 
@@ -290,8 +494,9 @@ class _PremiumPianoPainter extends CustomPainter {
         ..color = const Color(0xFF9E9A92).withOpacity(0.4),
     );
 
-    // Bottom edge (key front face simulation)
-    final bottomEdge = Rect.fromLTWH(x + keyGap / 2, height - 4, width - keyGap, 4);
+    // Bottom edge (key front face simulation) - shorter when pressed
+    final bottomHeight = 4.0 * (1.0 - pressAmount * 0.5);
+    final bottomEdge = Rect.fromLTWH(x + keyGap / 2, height - bottomHeight, width - keyGap, bottomHeight);
     canvas.drawRRect(
       RRect.fromRectAndCorners(
         bottomEdge,
@@ -301,8 +506,8 @@ class _PremiumPianoPainter extends CustomPainter {
       Paint()
         ..shader = LinearGradient(
           colors: [
-            const Color(0xFFD4D0C8),
-            const Color(0xFFC8C4BC),
+            Color.lerp(const Color(0xFFD4D0C8), Colors.black, pressedDarken)!,
+            Color.lerp(const Color(0xFFC8C4BC), Colors.black, pressedDarken)!,
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -310,8 +515,10 @@ class _PremiumPianoPainter extends CustomPainter {
     );
   }
 
-  void _drawBlackKey(Canvas canvas, double x, double width, double height) {
-    final keyRect = Rect.fromLTWH(x, 0, width, height);
+  void _drawBlackKey(Canvas canvas, double x, double width, double height, double pressAmount) {
+    // Apply press effect: key appears to move down slightly
+    final pressOffset = pressAmount * 2.0;
+    final keyRect = Rect.fromLTWH(x, pressOffset, width, height - pressOffset);
 
     // Black key with beveled 3D appearance
     final RRect keyRRect = RRect.fromRectAndCorners(
@@ -320,27 +527,31 @@ class _PremiumPianoPainter extends CustomPainter {
       bottomRight: const Radius.circular(3),
     );
 
-    // Shadow underneath
+    // Shadow underneath (reduced when pressed)
+    final shadowOpacity = 0.5 * (1.0 - pressAmount * 0.6);
     canvas.drawRRect(
-      keyRRect.shift(const Offset(2, 3)),
-      Paint()..color = Colors.black.withOpacity(0.5),
+      keyRRect.shift(Offset(2 * (1.0 - pressAmount), 3 * (1.0 - pressAmount))),
+      Paint()..color = Colors.black.withOpacity(shadowOpacity),
     );
+
+    // Pressed keys get slightly lighter (simulating light hitting differently)
+    final pressedLighten = pressAmount * 0.05;
 
     // Main ebony body with gradient
     final Paint ebonyGradient = Paint()
       ..shader = LinearGradient(
         colors: isDark
             ? [
-                const Color(0xFF252525),
-                const Color(0xFF1A1A1A),
-                const Color(0xFF151515),
-                const Color(0xFF0D0D0D),
+                Color.lerp(const Color(0xFF252525), Colors.white, pressedLighten)!,
+                Color.lerp(const Color(0xFF1A1A1A), Colors.white, pressedLighten)!,
+                Color.lerp(const Color(0xFF151515), Colors.white, pressedLighten)!,
+                Color.lerp(const Color(0xFF0D0D0D), Colors.white, pressedLighten)!,
               ]
             : [
-                const Color(0xFF2A2A2A),
-                const Color(0xFF1F1F1F),
-                const Color(0xFF171717),
-                const Color(0xFF0F0F0F),
+                Color.lerp(const Color(0xFF2A2A2A), Colors.white, pressedLighten)!,
+                Color.lerp(const Color(0xFF1F1F1F), Colors.white, pressedLighten)!,
+                Color.lerp(const Color(0xFF171717), Colors.white, pressedLighten)!,
+                Color.lerp(const Color(0xFF0F0F0F), Colors.white, pressedLighten)!,
               ],
         stops: const [0.0, 0.3, 0.7, 1.0],
         begin: Alignment.topCenter,
@@ -349,15 +560,16 @@ class _PremiumPianoPainter extends CustomPainter {
 
     canvas.drawRRect(keyRRect, ebonyGradient);
 
-    // Top bevel highlight (simulates light hitting the top edge)
-    final topBevel = Rect.fromLTWH(x, 0, width, 3);
+    // Top bevel highlight (simulates light hitting the top edge) - reduced when pressed
+    final topBevelOpacity = (1.0 - pressAmount * 0.5);
+    final topBevel = Rect.fromLTWH(x, pressOffset, width, 3);
     canvas.drawRRect(
       RRect.fromRectAndCorners(topBevel),
       Paint()
         ..shader = LinearGradient(
           colors: [
-            Colors.white.withOpacity(0.15),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withOpacity(0.15 * topBevelOpacity),
+            Colors.white.withOpacity(0.05 * topBevelOpacity),
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -366,21 +578,22 @@ class _PremiumPianoPainter extends CustomPainter {
 
     // Left edge highlight
     canvas.drawLine(
-      Offset(x + 1, 2),
+      Offset(x + 1, pressOffset + 2),
       Offset(x + 1, height - 4),
       Paint()
-        ..color = Colors.white.withOpacity(0.08)
+        ..color = Colors.white.withOpacity(0.08 * (1.0 - pressAmount * 0.3))
         ..strokeWidth = 1,
     );
 
-    // Center specular highlight (glossy appearance)
-    final centerHighlight = Rect.fromLTWH(x + width * 0.3, 4, width * 0.4, height * 0.3);
+    // Center specular highlight (glossy appearance) - enhanced slightly when pressed
+    final specularOpacity = 0.12 + pressAmount * 0.08;
+    final centerHighlight = Rect.fromLTWH(x + width * 0.3, pressOffset + 4, width * 0.4, (height - pressOffset) * 0.3);
     canvas.drawRRect(
       RRect.fromRectAndRadius(centerHighlight, const Radius.circular(2)),
       Paint()
         ..shader = LinearGradient(
           colors: [
-            Colors.white.withOpacity(0.12),
+            Colors.white.withOpacity(specularOpacity),
             Colors.white.withOpacity(0.02),
           ],
           begin: Alignment.topCenter,
@@ -388,8 +601,9 @@ class _PremiumPianoPainter extends CustomPainter {
         ).createShader(centerHighlight),
     );
 
-    // Bottom rounded edge
-    final bottomEdge = Rect.fromLTWH(x, height - 6, width, 6);
+    // Bottom rounded edge (shorter when pressed)
+    final bottomEdgeHeight = 6.0 * (1.0 - pressAmount * 0.5);
+    final bottomEdge = Rect.fromLTWH(x, height - bottomEdgeHeight, width, bottomEdgeHeight);
     canvas.drawRRect(
       RRect.fromRectAndCorners(
         bottomEdge,
@@ -558,6 +772,8 @@ class _PremiumPianoPainter extends CustomPainter {
         oldDelegate.startPc != startPc ||
         oldDelegate.root != root ||
         oldDelegate.isDark != isDark ||
-        oldDelegate.tones.length != tones.length;
+        oldDelegate.tones.length != tones.length ||
+        oldDelegate.pressedKeyIndex != pressedKeyIndex ||
+        oldDelegate.pressAmount != pressAmount;
   }
 }

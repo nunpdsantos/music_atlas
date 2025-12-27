@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
 import '../../core/note_utils.dart';
+import '../../logic/providers.dart';
 import 'guitar_fretboard.dart';
 import 'piano_keyboard.dart';
 import 'fretboard_overview.dart';
@@ -8,7 +10,9 @@ import 'fretboard_overview.dart';
 /// Premium interactive instrument sheet with elegant design.
 /// Provides a polished interface for visualizing chords and scales
 /// on guitar fretboard and piano keyboard.
-class InteractiveFretboardSheet extends StatefulWidget {
+///
+/// Supports audio playback when tapping notes (requires audio samples).
+class InteractiveFretboardSheet extends ConsumerStatefulWidget {
   final String? chordName;
   final String? title;
   final List<String>? tones;
@@ -29,10 +33,10 @@ class InteractiveFretboardSheet extends StatefulWidget {
   });
 
   @override
-  State<InteractiveFretboardSheet> createState() => _InteractiveFretboardSheetState();
+  ConsumerState<InteractiveFretboardSheet> createState() => _InteractiveFretboardSheetState();
 }
 
-class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
+class _InteractiveFretboardSheetState extends ConsumerState<InteractiveFretboardSheet> {
   int _selectedInstrument = 0; // 0 = Guitar, 1 = Piano
   late ScrollController _scrollController;
 
@@ -207,31 +211,36 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
 
   Widget _buildToggleBtn(String label, int index, Color cardBg, Color textPrimary, Color textSecondary, bool isDark) {
     final bool isActive = _selectedInstrument == index;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedInstrument = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? cardBg : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.25 : 0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 14,
-            color: isActive ? textPrimary : textSecondary,
+    return Semantics(
+      button: true,
+      selected: isActive,
+      label: '$label instrument${isActive ? ', selected' : ''}',
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedInstrument = index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? cardBg : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.25 : 0.08),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              fontSize: 14,
+              color: isActive ? textPrimary : textSecondary,
+            ),
           ),
         ),
       ),
@@ -289,6 +298,7 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
     final double screenWidth = MediaQuery.of(context).size.width - 40;
     final double fretWidth = screenWidth / 5.0;
     final double contentWidth = fretWidth * 12;
+    final audioService = ref.read(audioServiceProvider);
 
     return Column(
       children: [
@@ -306,14 +316,20 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: GuitarFretboard(
-                tones: _safeTones,
-                root: widget.root,
-                octaves: 2,
-                leftHanded: _leftHanded,
-                scrollController: _scrollController,
-                fretWidth: fretWidth,
-                totalFrets: 12,
+              // RepaintBoundary isolates guitar fretboard repaints
+              child: RepaintBoundary(
+                child: GuitarFretboard(
+                  tones: _safeTones,
+                  root: widget.root,
+                  octaves: 2,
+                  leftHanded: _leftHanded,
+                  scrollController: _scrollController,
+                  fretWidth: fretWidth,
+                  totalFrets: 12,
+                  onNoteTap: (noteName, pitchClass, string, fret) {
+                    audioService.playPitchClass(pitchClass);
+                  },
+                ),
               ),
             ),
           ),
@@ -358,14 +374,21 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
   Widget _buildPianoLayout(BuildContext context, bool isDark) {
     final rootPc = NoteUtils.pitchClass(widget.root);
     final startPc = rootPc >= 0 ? rootPc : 0;
+    final audioService = ref.read(audioServiceProvider);
 
     return Center(
-      child: PianoKeyboard(
-        tones: _safeTones,
-        root: widget.root,
-        octaves: 2,
-        startPc: startPc,
-        isDark: isDark,
+      // RepaintBoundary isolates piano keyboard repaints
+      child: RepaintBoundary(
+        child: PianoKeyboard(
+          tones: _safeTones,
+          root: widget.root,
+          octaves: 2,
+          startPc: startPc,
+          isDark: isDark,
+          onKeyTap: (noteName, pitchClass) {
+            audioService.playPitchClass(pitchClass);
+          },
+        ),
       ),
     );
   }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/motion_tokens.dart';
 import '../../core/theme.dart';
-import '../../logic/theory_engine.dart';
 import '../../data/models.dart';
+import '../../logic/theory_engine.dart';
+import '../components/animated_entrance.dart';
 import '../components/chord_card.dart';
 import '../components/interactive_fretboard_sheet.dart';
 
@@ -61,8 +64,10 @@ class _ModesScreenState extends State<ModesScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          // 1. Controls Card
-          Container(
+          // 1. Controls Card - entrance animation
+          AnimatedEntrance(
+            duration: MotionTokens.standard,
+            child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: cardBg,
@@ -123,10 +128,13 @@ class _ModesScreenState extends State<ModesScreen> {
               ],
             ),
           ),
+          ),
 
-          // MODE CHARACTERISTICS CARD
+          // MODE CHARACTERISTICS CARD - entrance animation
           const SizedBox(height: 16),
-          Builder(
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 100),
+            child: Builder(
             builder: (context) {
               final chars = TheoryEngine.kModeCharacteristics[modeName];
               if (chars == null) return const SizedBox.shrink();
@@ -210,6 +218,7 @@ class _ModesScreenState extends State<ModesScreen> {
               );
             },
           ),
+          ),
 
           // PARENT KEY RELATIONSHIP
           if (_modeIdx != 0) ...[
@@ -266,61 +275,74 @@ class _ModesScreenState extends State<ModesScreen> {
           ),
           const SizedBox(height: 10),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: pack.scale.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final note = entry.value;
+          Semantics(
+            label: '$_root $modeName scale notes: ${pack.scale.join(", ")}. Tap to view on fretboard.',
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: pack.scale.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final note = entry.value;
+                final degreeNames = ['Root', '2nd', '3rd', '4th', '5th', '6th', '7th'];
+                final degree = idx < degreeNames.length ? degreeNames[idx] : '';
 
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) {
-                        return InteractiveFretboardSheet(
-                          chordName: "$_root $modeName Scale",
-                          chordNotes: pack.scale,
-                          isScale: true,
-                          root: _root,
+                return Expanded(
+                  child: Semantics(
+                    button: true,
+                    label: '$note, $degree degree',
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) {
+                            return InteractiveFretboardSheet(
+                              chordName: "$_root $modeName Scale",
+                              chordNotes: pack.scale,
+                              isScale: true,
+                              root: _root,
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(right: idx == 6 ? 0 : 4),
-                    height: 38,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: noteBg,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: noteBorder.withOpacity(0.2)),
-                    ),
-                    child: Text(
-                      note,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: noteTxt,
-                        fontSize: 14,
+                      child: Container(
+                        margin: EdgeInsets.only(right: idx == 6 ? 0 : 4),
+                        height: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: noteBg,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: noteBorder.withOpacity(0.2)),
+                        ),
+                        child: Text(
+                          note,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: noteTxt,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
 
           const SizedBox(height: 20),
-          Text(
-            "DIATONIC CHORDS",
-            style: TextStyle(
-              fontSize: 11, 
-              fontWeight: FontWeight.w700, 
-              letterSpacing: 0.5, 
-              color: textSecondary,
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 250),
+            child: Text(
+              "DIATONIC CHORDS",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: textSecondary,
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -332,11 +354,15 @@ class _ModesScreenState extends State<ModesScreen> {
                 spacing: 12,
                 runSpacing: 10,
                 children: List.generate(pack.chordNames.length, (i) {
-                  return ChordCardGrid(
-                    width: itemWidth,
-                    name: pack.chordNames[i],
-                    notes: pack.notes[i],
-                    roman: pack.roman[i],
+                  return AnimatedEntrance(
+                    delay: Duration(milliseconds: 300 + (i * 50)),
+                    slideOffset: 16,
+                    child: ChordCardGrid(
+                      width: itemWidth,
+                      name: pack.chordNames[i],
+                      notes: pack.notes[i],
+                      roman: pack.roman[i],
+                    ),
                   );
                 }),
               );

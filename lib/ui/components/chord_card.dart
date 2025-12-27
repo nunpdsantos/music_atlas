@@ -79,22 +79,30 @@ class ChordCard extends StatelessWidget {
       root = name.substring(0, 2);
     }
 
-    return GestureDetector(
-      onTap: onTap ?? () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => InteractiveFretboardSheet(
-            chordName: name,
-            tones: notes,
-            root: root,
-          ),
-        );
-      },
-      child: Container(
-        width: width,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    // Build semantic label for accessibility
+    final notesLabel = notes.join(', ');
+    final qualityLabel = roman != null ? ', $roman' : '';
+    final semanticLabel = '$name chord$qualityLabel. Notes: $notesLabel. Tap to view on fretboard.';
+
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: onTap ?? () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => InteractiveFretboardSheet(
+              chordName: name,
+              tones: notes,
+              root: root,
+            ),
+          );
+        },
+        child: Container(
+          width: width,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: cardBg,
           borderRadius: BorderRadius.circular(14),
@@ -158,6 +166,7 @@ class ChordCard extends StatelessWidget {
             ],
           ],
         ),
+        ),
       ),
     );
   }
@@ -219,25 +228,33 @@ class ChordCardGrid extends StatelessWidget {
       root = name.substring(0, 2);
     }
 
-    return GestureDetector(
-      onTap: onTap ?? () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => InteractiveFretboardSheet(
-            chordName: name,
-            tones: notes,
-            root: root,
-          ),
-        );
-      },
-      child: Container(
-        width: width,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(14),
+    // Build semantic label for accessibility
+    final notesLabel = notes.join(', ');
+    final romanLabel = safeRoman.isNotEmpty ? ', $safeRoman' : '';
+    final semanticLabel = '$name chord$romanLabel. Notes: $notesLabel. Tap to view on fretboard.';
+
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: onTap ?? () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => InteractiveFretboardSheet(
+              chordName: name,
+              tones: notes,
+              root: root,
+            ),
+          );
+        },
+        child: Container(
+          width: width,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(14),
           border: Border.all(color: borderColor),
           boxShadow: isDark ? [] : [
             BoxShadow(

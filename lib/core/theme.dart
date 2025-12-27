@@ -1,6 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Application theme configuration for Music Atlas.
+///
+/// Provides both light and dark theme definitions, along with
+/// theme-aware helper methods for consistent styling across the app.
+///
+/// ## Color Palette
+/// - [tonicBlue]: Primary color for major keys and root notes
+/// - [minorAmber]: Accent color for minor keys
+/// - [accentRed]: Warning/diminished chord accent
+///
+/// ## Usage
+/// ```dart
+/// // Get theme-aware colors
+/// final cardBg = AppTheme.getCardBg(context);
+/// final isDark = AppTheme.isDark(context);
+///
+/// // Get interval colors for visualizations
+/// final color = AppTheme.getIntervalColor(7); // Perfect 5th color
+/// ```
 class AppTheme {
   // Primary Brand Colors (from your reference)
   static const Color tonicBlue = Color(0xFF1D4ED8);

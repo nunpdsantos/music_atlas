@@ -28,7 +28,7 @@ class NoteUtils {
     for (int i = 0; i < rest.length; i++) {
       final ch = rest[i];
       if (ch == '#') val += 1;
-      if (ch == 'b' && !(i == 0 && letter == 'B')) val -= 1;
+      if (ch == 'b') val -= 1;
     }
 
     return ((val % 12) + 12) % 12;

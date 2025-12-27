@@ -19,7 +19,7 @@
 
 ### What To Do Next
 1. ~~Create animation utilities/tokens~~ **DONE**
-2. Apply entrance animations to existing screens (wrap components with AnimatedEntrance)
+2. ~~Apply entrance animations to screens~~ **DONE** (CircleScreen, ModesScreen, SettingsScreen)
 3. Add accessibility (Semantics) widgets
 4. Add dartdoc comments to public APIs
 
@@ -64,17 +64,19 @@
   - Created `lib/core/persistence_service.dart`
   - Updated providers to load/save settings automatically
   - Created tests for persistence service
-- Phase 1: Entrance Animations - **IN PROGRESS**
+- Phase 1: Entrance Animations - **COMPLETE**
   - Created `lib/core/motion_tokens.dart` (animation constants)
   - Created `lib/ui/components/animated_entrance.dart` (reusable widgets)
   - Created tests for motion tokens
-  - **Next:** Apply animations to screens
+  - Applied animations to CircleScreen, ModesScreen, SettingsScreen
+  - Staggered chord card animations
 
 **Commits:**
 1. `51c36cf` - Add implementation plan with baseline snapshot documentation
 2. `43afe42` - Complete Phase 0: Testing infrastructure and code quality
 3. `f9ea2d6` - Add data persistence with SharedPreferences
-4. (pending) - Add animation foundation (motion tokens, animated components)
+4. `959d379` - Add animation foundation (motion tokens, animated components)
+5. (pending) - Apply entrance animations to screens
 
 ---
 

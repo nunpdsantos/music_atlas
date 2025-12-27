@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/motion_tokens.dart';
 import '../../core/theme.dart';
-import '../../logic/theory_engine.dart';
 import '../../data/models.dart';
+import '../../logic/theory_engine.dart';
+import '../components/animated_entrance.dart';
 import '../components/chord_card.dart';
 import '../components/interactive_fretboard_sheet.dart';
 
@@ -61,8 +64,10 @@ class _ModesScreenState extends State<ModesScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          // 1. Controls Card
-          Container(
+          // 1. Controls Card - entrance animation
+          AnimatedEntrance(
+            duration: MotionTokens.standard,
+            child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: cardBg,
@@ -123,10 +128,13 @@ class _ModesScreenState extends State<ModesScreen> {
               ],
             ),
           ),
+          ),
 
-          // MODE CHARACTERISTICS CARD
+          // MODE CHARACTERISTICS CARD - entrance animation
           const SizedBox(height: 16),
-          Builder(
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 100),
+            child: Builder(
             builder: (context) {
               final chars = TheoryEngine.kModeCharacteristics[modeName];
               if (chars == null) return const SizedBox.shrink();
@@ -209,6 +217,7 @@ class _ModesScreenState extends State<ModesScreen> {
                 ),
               );
             },
+          ),
           ),
 
           // PARENT KEY RELATIONSHIP
@@ -314,13 +323,16 @@ class _ModesScreenState extends State<ModesScreen> {
           ),
 
           const SizedBox(height: 20),
-          Text(
-            "DIATONIC CHORDS",
-            style: TextStyle(
-              fontSize: 11, 
-              fontWeight: FontWeight.w700, 
-              letterSpacing: 0.5, 
-              color: textSecondary,
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 250),
+            child: Text(
+              "DIATONIC CHORDS",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: textSecondary,
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -332,11 +344,15 @@ class _ModesScreenState extends State<ModesScreen> {
                 spacing: 12,
                 runSpacing: 10,
                 children: List.generate(pack.chordNames.length, (i) {
-                  return ChordCardGrid(
-                    width: itemWidth,
-                    name: pack.chordNames[i],
-                    notes: pack.notes[i],
-                    roman: pack.roman[i],
+                  return AnimatedEntrance(
+                    delay: Duration(milliseconds: 300 + (i * 50)),
+                    slideOffset: 16,
+                    child: ChordCardGrid(
+                      width: itemWidth,
+                      name: pack.chordNames[i],
+                      notes: pack.notes[i],
+                      roman: pack.roman[i],
+                    ),
                   );
                 }),
               );

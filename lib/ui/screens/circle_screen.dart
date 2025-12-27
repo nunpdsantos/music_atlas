@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../logic/providers.dart';
-import '../../logic/theory_engine.dart';
+
+import '../../core/motion_tokens.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
-import '../components/circle_of_fifths.dart';
+import '../../logic/providers.dart';
+import '../../logic/theory_engine.dart';
+import '../components/animated_entrance.dart';
 import '../components/chord_card.dart';
+import '../components/circle_of_fifths.dart';
 import '../components/interactive_fretboard_sheet.dart';
 
 class CircleScreen extends ConsumerWidget {
@@ -41,35 +44,48 @@ class CircleScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         children: [
-          // 1. The Circle
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 340, maxHeight: 340),
-              child: const InteractiveCircle(),
+          // 1. The Circle - entrance animation
+          AnimatedEntrance(
+            duration: MotionTokens.medium,
+            slideOffset: 0, // No slide, just fade + scale for the circle
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 340, maxHeight: 340),
+                child: const InteractiveCircle(),
+              ),
             ),
           ),
           const SizedBox(height: 24),
 
-          // 2. Current Key Card
-          _CurrentKeyCard(pack: pack, state: state, ref: ref),
+          // 2. Current Key Card - entrance animation with delay
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 100),
+            child: _CurrentKeyCard(pack: pack, state: state, ref: ref),
+          ),
 
           // 3. Minor Type Toggle
           if (!isMajor)
-            _MinorTypeSelector(
-              current: state.minorType,
-              onChanged: (t) => ref.read(circleProvider.notifier).setMinorType(t),
+            AnimatedEntrance(
+              delay: const Duration(milliseconds: 150),
+              child: _MinorTypeSelector(
+                current: state.minorType,
+                onChanged: (t) => ref.read(circleProvider.notifier).setMinorType(t),
+              ),
             ),
 
           const SizedBox(height: 20),
 
-          // 4. Scale Notes Display
-          Text(
-            "SCALE NOTES",
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-              color: textSecondary,
+          // 4. Scale Notes Display - entrance animation
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 200),
+            child: Text(
+              "SCALE NOTES",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: textSecondary,
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -136,47 +152,55 @@ class CircleScreen extends ConsumerWidget {
 
           const SizedBox(height: 20),
 
-          // 5. Chords Grid
-          Text(
-            "Chords in ${pack.keyLabel}",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textPrimary),
+          // 5. Chords Grid - title with animation
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 300),
+            child: Text(
+              "Chords in ${pack.keyLabel}",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textPrimary),
+            ),
           ),
           const SizedBox(height: 12),
 
+          // Chord cards with staggered animation
           LayoutBuilder(
             builder: (context, constraints) {
               final itemWidth = (constraints.maxWidth - 12) / 2;
-              
+
               return Wrap(
                 spacing: 12,
                 runSpacing: 10,
                 children: List.generate(pack.chordNames.length, (i) {
                   final chordName = pack.chordNames[i];
                   final chordNotes = pack.notes[i];
-                  
-                  return ChordCardGrid(
-                    width: itemWidth,
-                    name: chordName,
-                    notes: chordNotes,
-                    roman: pack.roman[i],
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        backgroundColor: cardBg,
-                        isScrollControlled: true,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                        ),
-                        builder: (context) {
-                          return InteractiveFretboardSheet(
-                            chordName: chordName,
-                            chordNotes: chordNotes,
-                            isScale: false,
-                            root: chordNotes.isNotEmpty ? chordNotes[0] : 'C',
-                          );
-                        },
-                      );
-                    },
+
+                  return AnimatedEntrance(
+                    delay: Duration(milliseconds: 350 + (i * 50)),
+                    slideOffset: 16,
+                    child: ChordCardGrid(
+                      width: itemWidth,
+                      name: chordName,
+                      notes: chordNotes,
+                      roman: pack.roman[i],
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: cardBg,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          builder: (context) {
+                            return InteractiveFretboardSheet(
+                              chordName: chordName,
+                              chordNotes: chordNotes,
+                              isScale: false,
+                              root: chordNotes.isNotEmpty ? chordNotes[0] : 'C',
+                            );
+                          },
+                        );
+                      },
+                    ),
                   );
                 }),
               );

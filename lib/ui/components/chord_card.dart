@@ -54,21 +54,21 @@ class ChordCard extends StatelessWidget {
     Color badgeText;
 
     if (isDim) {
-      // Diminished - vibrant red (same as b2 interval on fretboard)
-      badgeBg = const Color(0xFFEF4444);
+      // Diminished - bright red
+      badgeBg = const Color(0xFFDC2626);
       badgeText = Colors.white;
     } else if (isAug) {
-      // Augmented - vibrant purple (same as b7 interval on fretboard)
-      badgeBg = const Color(0xFFA855F7);
+      // Augmented - bright purple
+      badgeBg = const Color(0xFF9333EA);
       badgeText = Colors.white;
     } else if (isMajor) {
-      // Major - vibrant blue (same as root/5th on fretboard)
-      badgeBg = const Color(0xFF3B82F6);
+      // Major - bright blue (tonicBlue)
+      badgeBg = AppTheme.tonicBlue;
       badgeText = Colors.white;
     } else {
-      // Minor - vibrant amber/yellow (same as b3 interval on fretboard)
-      badgeBg = const Color(0xFFEAB308);
-      badgeText = Colors.black87;
+      // Minor - bright orange (distinct from major blue)
+      badgeBg = const Color(0xFFF97316);
+      badgeText = Colors.white;
     }
 
     // Override colors for badge (transposer index)
@@ -206,21 +206,21 @@ class ChordCardGrid extends StatelessWidget {
     Color badgeText;
 
     if (isDim) {
-      // Diminished - vibrant red (same as b2 interval on fretboard)
-      badgeBg = const Color(0xFFEF4444);
+      // Diminished - bright red
+      badgeBg = const Color(0xFFDC2626);
       badgeText = Colors.white;
     } else if (isAug) {
-      // Augmented - vibrant purple (same as b7 interval on fretboard)
-      badgeBg = const Color(0xFFA855F7);
+      // Augmented - bright purple
+      badgeBg = const Color(0xFF9333EA);
       badgeText = Colors.white;
     } else if (isMajor) {
-      // Major - vibrant blue (same as root/5th on fretboard)
-      badgeBg = const Color(0xFF3B82F6);
+      // Major - bright blue (tonicBlue)
+      badgeBg = AppTheme.tonicBlue;
       badgeText = Colors.white;
     } else {
-      // Minor - vibrant amber/yellow (same as b3 interval on fretboard)
-      badgeBg = const Color(0xFFEAB308);
-      badgeText = Colors.black87;
+      // Minor - bright orange (distinct from major blue)
+      badgeBg = const Color(0xFFF97316);
+      badgeText = Colors.white;
     }
 
     String root = name.isNotEmpty ? name[0] : 'C';

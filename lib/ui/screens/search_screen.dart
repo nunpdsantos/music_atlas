@@ -382,14 +382,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                     constraints: const BoxConstraints(maxWidth: 80),
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.getMajorLight(context),
+                                      // Dark mode: bright blue background
+                                      // Light mode: subtle blue background
+                                      color: isDark ? AppTheme.tonicBlue : AppTheme.getMajorLight(context),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       suggestion.text,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontWeight: FontWeight.w700,
-                                        color: AppTheme.tonicBlue,
+                                        color: isDark ? Colors.white : AppTheme.tonicBlue,
                                         fontSize: 14,
                                       ),
                                       overflow: TextOverflow.ellipsis,

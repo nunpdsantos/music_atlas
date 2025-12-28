@@ -94,8 +94,18 @@ class DualCirclePainter extends CustomPainter {
     final separatorColor = isDark ? Colors.grey.withOpacity(0.25) : Colors.grey.withOpacity(0.15);
     
     // Selection highlight colors (theme-aware)
-    final majorLightColor = isDark ? AppTheme.darkMajorLight : AppTheme.majorLight;
-    final minorLightColor = isDark ? AppTheme.darkMinorLight : AppTheme.minorLight;
+    // Dark mode: use bright vibrant colors for visibility
+    // Light mode: use subtle tints
+    final Color majorLightColor;
+    final Color minorLightColor;
+
+    if (isDark) {
+      majorLightColor = AppTheme.tonicBlue;
+      minorLightColor = const Color(0xFFF97316); // bright orange
+    } else {
+      majorLightColor = AppTheme.majorLight;
+      minorLightColor = AppTheme.minorLight;
+    }
     
     // Text colors for unselected items
     final textPrimary = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;

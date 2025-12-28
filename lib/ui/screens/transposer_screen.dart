@@ -296,8 +296,10 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
                             icon: const Icon(Icons.swap_horiz),
                             tooltip: 'Swap keys',
                             style: IconButton.styleFrom(
-                              backgroundColor: majorLight,
-                              foregroundColor: AppTheme.tonicBlue,
+                              // Dark mode: bright blue button with white icon
+                              // Light mode: subtle blue background with blue icon
+                              backgroundColor: isDark ? AppTheme.tonicBlue : majorLight,
+                              foregroundColor: isDark ? Colors.white : AppTheme.tonicBlue,
                             ),
                           ),
                         ),

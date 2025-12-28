@@ -144,11 +144,22 @@ class _ModesScreenState extends State<ModesScreen> {
             builder: (context) {
               final chars = TheoryEngine.kModeCharacteristics[modeName];
               if (chars == null) return const SizedBox.shrink();
-              
+
               final isMajorFamily = chars['family'] == 'Major';
-              final cardColor = isMajorFamily ? majorLight : minorLight;
-              final textColor = isMajorFamily ? AppTheme.tonicBlue : AppTheme.minorAmber;
-              
+
+              // Dark mode: use bright vibrant colors
+              // Light mode: use subtle tints
+              final Color cardColor;
+              final Color textColor;
+
+              if (isDark) {
+                cardColor = isMajorFamily ? AppTheme.tonicBlue : const Color(0xFFF97316);
+                textColor = Colors.white;
+              } else {
+                cardColor = isMajorFamily ? majorLight : minorLight;
+                textColor = isMajorFamily ? AppTheme.tonicBlue : AppTheme.minorAmber;
+              }
+
               return Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -176,7 +187,7 @@ class _ModesScreenState extends State<ModesScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: cardBg,
+                            color: isDark ? cardColor.withOpacity(0.5) : cardBg,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(

@@ -29,15 +29,19 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     // Theme-aware colors
     final cardBg = AppTheme.getCardBg(context);
-    final majorLight = AppTheme.getMajorLight(context);
-    
+    final isDark = AppTheme.isDark(context);
+
+    // Dark mode: bright blue indicator for visibility
+    // Light mode: subtle blue tint
+    final indicatorColor = isDark ? AppTheme.tonicBlue : AppTheme.getMajorLight(context);
+
     return Scaffold(
       body: _screens[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) => setState(() => _selectedIndex = index),
         backgroundColor: cardBg,
-        indicatorColor: majorLight,
+        indicatorColor: indicatorColor,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.circle_outlined), label: 'Circle'),
           NavigationDestination(icon: Icon(Icons.search), label: 'Search'),

@@ -390,7 +390,12 @@ class _MinorTypeSelector extends StatelessWidget {
     final cardBg = AppTheme.getCardBg(context);
     final borderColor = AppTheme.getBorderColor(context);
     final textSecondary = AppTheme.getTextSecondary(context);
-    final minorLight = AppTheme.getMinorLight(context);
+    final isDark = AppTheme.isDark(context);
+
+    // Dark mode: bright orange background with white text
+    // Light mode: subtle amber background with amber text
+    final Color activeBg = isDark ? const Color(0xFFF97316) : AppTheme.getMinorLight(context);
+    final Color activeText = isDark ? Colors.white : AppTheme.minorAmber;
 
     return Container(
       margin: const EdgeInsets.only(top: 16),
@@ -404,8 +409,8 @@ class _MinorTypeSelector extends StatelessWidget {
               onTap: () => onChanged(type),
               child: Container(
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: isActive ? minorLight : Colors.transparent, borderRadius: BorderRadius.circular(18)),
-                child: Text(type.name[0].toUpperCase() + type.name.substring(1), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive ? AppTheme.minorAmber : textSecondary)),
+                decoration: BoxDecoration(color: isActive ? activeBg : Colors.transparent, borderRadius: BorderRadius.circular(18)),
+                child: Text(type.name[0].toUpperCase() + type.name.substring(1), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive ? activeText : textSecondary)),
               ),
             ),
           );

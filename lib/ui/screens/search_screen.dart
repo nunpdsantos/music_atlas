@@ -270,10 +270,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         child: TextField(
                           controller: _controller,
                           focusNode: _focusNode,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.tonicBlue,
+                            // Brighter text in dark mode for visibility
+                            color: isDark ? const Color(0xFF60A5FA) : AppTheme.tonicBlue,
                           ),
                           decoration: InputDecoration(
                             hintText: "e.g. Cm7, G#, Bb...",
@@ -605,68 +606,45 @@ class _ChordResultCard extends StatelessWidget {
 
 class _EmptySearchState extends StatelessWidget {
   final bool keyboardVisible;
-  
+
   const _EmptySearchState({this.keyboardVisible = false});
 
   @override
   Widget build(BuildContext context) {
     final cardBgCol = AppTheme.cardBackground(context);
     final borderCol = AppTheme.border(context);
-    final textPrimCol = AppTheme.textPrimaryColor(context);
     final textSecCol = AppTheme.textSecondaryColor(context);
-    final majorLightCol = AppTheme.majorLightColor(context);
 
-    // Use ListView instead of Column to handle overflow gracefully
+    // Simplified clean layout - just search tips
     return ListView(
       shrinkWrap: true,
       physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.symmetric(
-        horizontal: 32, 
+        horizontal: 20,
         vertical: keyboardVisible ? 12 : 24,
       ),
       children: [
         if (!keyboardVisible) ...[
-          const SizedBox(height: 20),
-          Center(
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: majorLightCol,
-                shape: BoxShape.circle,
+          const SizedBox(height: 16),
+          // Simple header
+          Row(
+            children: [
+              Icon(Icons.lightbulb_outline, size: 18, color: textSecCol),
+              const SizedBox(width: 8),
+              Text(
+                "Quick tips",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: textSecCol,
+                ),
               ),
-              child: const Icon(
-                Icons.music_note,
-                size: 40,
-                color: AppTheme.tonicBlue,
-              ),
-            ),
+            ],
           ),
-          const SizedBox(height: 24),
-          
-          Text(
-            "Search for any chord",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: textPrimCol,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          
-          Text(
-            "Try typing a chord symbol or partial text",
-            style: TextStyle(
-              fontSize: 14,
-              color: textSecCol,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
         ],
-        
-        // Search tips - always show but more compact when keyboard is up
+
+        // Search tips - clean card
         Container(
           padding: EdgeInsets.all(keyboardVisible ? 12 : 16),
           decoration: BoxDecoration(
@@ -679,16 +657,15 @@ class _EmptySearchState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _SearchTip(example: 'Cm7', description: 'Standard chord symbols'),
-              SizedBox(height: keyboardVisible ? 6 : 8),
+              SizedBox(height: keyboardVisible ? 6 : 10),
               _SearchTip(example: 'gsh → G#', description: 'Type "sh" for sharp'),
-              SizedBox(height: keyboardVisible ? 6 : 8),
+              SizedBox(height: keyboardVisible ? 6 : 10),
               _SearchTip(example: 'bfl → Bb', description: 'Type "fl" for flat'),
-              SizedBox(height: keyboardVisible ? 6 : 8),
+              SizedBox(height: keyboardVisible ? 6 : 10),
               _SearchTip(example: 'Cb → B', description: 'Enharmonic equivalents'),
             ],
           ),
         ),
-        if (!keyboardVisible) const SizedBox(height: 20),
       ],
     );
   }

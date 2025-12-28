@@ -389,10 +389,11 @@ class _TransposerScreenState extends ConsumerState<TransposerScreen> {
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.zero,
                         ),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.tonicBlue,
+                          // Brighter text in dark mode for visibility
+                          color: isDark ? const Color(0xFF60A5FA) : AppTheme.tonicBlue,
                         ),
                       ),
                     ),

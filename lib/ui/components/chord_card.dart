@@ -49,22 +49,26 @@ class ChordCard extends StatelessWidget {
     );
     final bool isMajor = !isDim && !isMinor && !isAug;
 
+    // Theme-aware accent colors for badge text
+    final tonicBlue = AppTheme.getTonicBlue(context);
+    final minorAmber = AppTheme.getMinorAmber(context);
+
     // Color scheme based on chord quality
     Color badgeBg;
     Color badgeText;
 
     if (isDim) {
       badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
+      badgeText = isDark ? const Color(0xFFFB7185) : const Color(0xFFD32F2F);
     } else if (isAug) {
       badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
+      badgeText = isDark ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED);
     } else if (isMajor) {
       badgeBg = majorLight;
-      badgeText = AppTheme.tonicBlue;
+      badgeText = tonicBlue;
     } else {
       badgeBg = minorLight;
-      badgeText = AppTheme.minorAmber;
+      badgeText = minorAmber;
     }
 
     // Override colors for badge (transposer index)
@@ -191,10 +195,14 @@ class ChordCardGrid extends StatelessWidget {
     final minorLight = AppTheme.getMinorLight(context);
     final isDark = AppTheme.isDark(context);
 
+    // Theme-aware accent colors for badge text
+    final tonicBlue = AppTheme.getTonicBlue(context);
+    final minorAmber = AppTheme.getMinorAmber(context);
+
     final safeRoman = roman ?? '';
     final bool isDim = safeRoman.contains('°');
     final bool isAug = safeRoman.contains('+');
-    final bool isMajor = !isDim && !isAug && 
+    final bool isMajor = !isDim && !isAug &&
         (safeRoman.isNotEmpty && safeRoman[0] == safeRoman[0].toUpperCase());
 
     Color badgeBg;
@@ -202,16 +210,16 @@ class ChordCardGrid extends StatelessWidget {
 
     if (isDim) {
       badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
+      badgeText = isDark ? const Color(0xFFFB7185) : const Color(0xFFD32F2F);
     } else if (isAug) {
       badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
+      badgeText = isDark ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED);
     } else if (isMajor) {
       badgeBg = majorLight;
-      badgeText = AppTheme.tonicBlue;
+      badgeText = tonicBlue;
     } else {
       badgeBg = minorLight;
-      badgeText = AppTheme.minorAmber;
+      badgeText = minorAmber;
     }
 
     String root = name.isNotEmpty ? name[0] : 'C';

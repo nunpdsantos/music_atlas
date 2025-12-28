@@ -160,13 +160,17 @@ class DualCirclePainter extends CustomPainter {
       // Draw Text
       final rMajText = (rOuter + rDivider) / 2;
       final rMinText = (rDivider + rInner) / 2;
-      
-      Color majTextColor = isPairActive 
-          ? (view == KeyView.major ? AppTheme.tonicBlue : AppTheme.tonicBlue.withOpacity(0.6)) 
+
+      // Theme-aware accent colors (brighter in dark mode)
+      final tonicBlue = isDark ? const Color(0xFF60A5FA) : AppTheme.tonicBlue;
+      final minorAmber = isDark ? const Color(0xFFFBBF24) : AppTheme.minorAmber;
+
+      Color majTextColor = isPairActive
+          ? (view == KeyView.major ? tonicBlue : tonicBlue.withOpacity(0.6))
           : textPrimary;
-      
-      Color minTextColor = isPairActive 
-          ? (view == KeyView.relativeMinor ? AppTheme.minorAmber : AppTheme.minorAmber.withOpacity(0.7)) 
+
+      Color minTextColor = isPairActive
+          ? (view == KeyView.relativeMinor ? minorAmber : minorAmber.withOpacity(0.7))
           : textSecondary;
 
       // Major Text

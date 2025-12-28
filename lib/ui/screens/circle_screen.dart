@@ -28,9 +28,13 @@ class CircleScreen extends ConsumerWidget {
     final majorLight = AppTheme.getMajorLight(context);
     final minorLight = AppTheme.getMinorLight(context);
 
+    // Theme-aware accent colors
+    final tonicBlue = AppTheme.getTonicBlue(context);
+    final minorAmber = AppTheme.getMinorAmber(context);
+
     final scaleBg = isMajor ? majorLight : minorLight;
-    final scaleText = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
-    final scaleBorder = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+    final scaleText = isMajor ? tonicBlue : minorAmber;
+    final scaleBorder = isMajor ? tonicBlue : minorAmber;
 
     return Scaffold(
       appBar: AppBar(
@@ -203,8 +207,11 @@ class _CurrentKeyCard extends StatelessWidget {
     final root = state.selectedMajorRoot;
     final relMinor = TheoryEngine.kRelativeMinors[root] ?? '?';
 
-    final activeColor = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
-    
+    // Theme-aware accent colors
+    final tonicBlue = AppTheme.getTonicBlue(context);
+    final minorAmber = AppTheme.getMinorAmber(context);
+    final activeColor = isMajor ? tonicBlue : minorAmber;
+
     // Theme-aware colors
     final cardBg = AppTheme.getCardBg(context);
     final borderColor = AppTheme.getBorderColor(context);
@@ -293,7 +300,7 @@ class _CurrentKeyCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: isMajor ? AppTheme.tonicBlue : textSecondary,
+                            color: isMajor ? tonicBlue : textSecondary,
                           ),
                         ),
                       ),
@@ -313,7 +320,7 @@ class _CurrentKeyCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: !isMajor ? AppTheme.minorAmber : textSecondary,
+                            color: !isMajor ? minorAmber : textSecondary,
                           ),
                         ),
                       ),
@@ -374,6 +381,7 @@ class _MinorTypeSelector extends StatelessWidget {
     final borderColor = AppTheme.getBorderColor(context);
     final textSecondary = AppTheme.getTextSecondary(context);
     final minorLight = AppTheme.getMinorLight(context);
+    final minorAmber = AppTheme.getMinorAmber(context);
 
     return Container(
       margin: const EdgeInsets.only(top: 16),
@@ -388,7 +396,7 @@ class _MinorTypeSelector extends StatelessWidget {
               child: Container(
                 alignment: Alignment.center,
                 decoration: BoxDecoration(color: isActive ? minorLight : Colors.transparent, borderRadius: BorderRadius.circular(18)),
-                child: Text(type.name[0].toUpperCase() + type.name.substring(1), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive ? AppTheme.minorAmber : textSecondary)),
+                child: Text(type.name[0].toUpperCase() + type.name.substring(1), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive ? minorAmber : textSecondary)),
               ),
             ),
           );

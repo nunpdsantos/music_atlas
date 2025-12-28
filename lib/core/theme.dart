@@ -69,7 +69,7 @@ class AppTheme {
   // ============================================
   // DARK MODE COLORS
   // ============================================
-  
+
   static const Color darkScaffoldBg = Color(0xFF0F172A);
   static const Color darkCardBg = Color(0xFF1E293B);
   static const Color darkBorderColor = Color(0xFF334155);
@@ -79,6 +79,11 @@ class AppTheme {
   // Tints for dark mode
   static const Color darkMajorLight = Color(0xFF1E3A5F);
   static const Color darkMinorLight = Color(0xFF422006);
+
+  // Brighter accent colors for dark mode (better readability on dark backgrounds)
+  static const Color darkTonicBlue = Color(0xFF60A5FA);      // Brighter blue for dark mode
+  static const Color darkMinorAmber = Color(0xFFFBBF24);     // Brighter amber for dark mode
+  static const Color darkAccentRed = Color(0xFFFB7185);      // Brighter red for dark mode
 
   // ============================================
   // LIGHT THEME
@@ -186,14 +191,35 @@ class AppTheme {
 
   /// Get minor light tint based on current theme
   static Color getMinorLight(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark 
-        ? darkMinorLight 
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkMinorLight
         : minorLight;
   }
 
   /// Check if current theme is dark
   static bool isDark(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark;
+  }
+
+  /// Get tonic blue color based on current theme (for badge text)
+  static Color getTonicBlue(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkTonicBlue
+        : tonicBlue;
+  }
+
+  /// Get minor amber color based on current theme (for badge text)
+  static Color getMinorAmber(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkMinorAmber
+        : minorAmber;
+  }
+
+  /// Get accent red color based on current theme (for diminished chords)
+  static Color getAccentRed(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkAccentRed
+        : accentRed;
   }
 
   /// Get input fill color based on current theme

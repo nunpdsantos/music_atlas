@@ -76,9 +76,9 @@ class AppTheme {
   static const Color darkTextPrimary = Color(0xFFF1F5F9);
   static const Color darkTextSecondary = Color(0xFF94A3B8);
 
-  // Tints for dark mode
-  static const Color darkMajorLight = Color(0xFF1E3A5F);
-  static const Color darkMinorLight = Color(0xFF422006);
+  // Tints for dark mode - More vibrant/visible colors
+  static const Color darkMajorLight = Color(0xFF1E4A8F);  // More saturated blue
+  static const Color darkMinorLight = Color(0xFF7A4510);  // More saturated amber/orange
 
   // ============================================
   // LIGHT THEME

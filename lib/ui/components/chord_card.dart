@@ -49,22 +49,24 @@ class ChordCard extends StatelessWidget {
     );
     final bool isMajor = !isDim && !isMinor && !isAug;
 
-    // Color scheme based on chord quality
+    // Color scheme based on chord quality - with improved dark mode visibility
     Color badgeBg;
     Color badgeText;
 
     if (isDim) {
-      badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
+      // More vibrant red for diminished chords
+      badgeBg = isDark ? const Color(0xFF7A2020) : const Color(0xFFFFEBEE);
+      badgeText = isDark ? const Color(0xFFFF6B6B) : const Color(0xFFD32F2F);
     } else if (isAug) {
-      badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
+      // More vibrant purple for augmented chords
+      badgeBg = isDark ? const Color(0xFF4A2D7A) : const Color(0xFFF3E8FF);
+      badgeText = isDark ? const Color(0xFFB088FF) : const Color(0xFF7C3AED);
     } else if (isMajor) {
       badgeBg = majorLight;
-      badgeText = AppTheme.tonicBlue;
+      badgeText = isDark ? const Color(0xFF60A5FA) : AppTheme.tonicBlue;
     } else {
       badgeBg = minorLight;
-      badgeText = AppTheme.minorAmber;
+      badgeText = isDark ? const Color(0xFFFBBF24) : AppTheme.minorAmber;
     }
 
     // Override colors for badge (transposer index)
@@ -197,21 +199,24 @@ class ChordCardGrid extends StatelessWidget {
     final bool isMajor = !isDim && !isAug && 
         (safeRoman.isNotEmpty && safeRoman[0] == safeRoman[0].toUpperCase());
 
+    // Color scheme based on chord quality - with improved dark mode visibility
     Color badgeBg;
     Color badgeText;
 
     if (isDim) {
-      badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
+      // More vibrant red for diminished chords
+      badgeBg = isDark ? const Color(0xFF7A2020) : const Color(0xFFFFEBEE);
+      badgeText = isDark ? const Color(0xFFFF6B6B) : const Color(0xFFD32F2F);
     } else if (isAug) {
-      badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
+      // More vibrant purple for augmented chords
+      badgeBg = isDark ? const Color(0xFF4A2D7A) : const Color(0xFFF3E8FF);
+      badgeText = isDark ? const Color(0xFFB088FF) : const Color(0xFF7C3AED);
     } else if (isMajor) {
       badgeBg = majorLight;
-      badgeText = AppTheme.tonicBlue;
+      badgeText = isDark ? const Color(0xFF60A5FA) : AppTheme.tonicBlue;
     } else {
       badgeBg = minorLight;
-      badgeText = AppTheme.minorAmber;
+      badgeText = isDark ? const Color(0xFFFBBF24) : AppTheme.minorAmber;
     }
 
     String root = name.isNotEmpty ? name[0] : 'C';

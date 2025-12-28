@@ -49,24 +49,26 @@ class ChordCard extends StatelessWidget {
     );
     final bool isMajor = !isDim && !isMinor && !isAug;
 
-    // Color scheme based on chord quality - with improved dark mode visibility
+    // Color scheme based on chord quality - using fretboard interval colors for visibility
     Color badgeBg;
     Color badgeText;
 
     if (isDim) {
-      // More vibrant red for diminished chords
-      badgeBg = isDark ? const Color(0xFF7A2020) : const Color(0xFFFFEBEE);
-      badgeText = isDark ? const Color(0xFFFF6B6B) : const Color(0xFFD32F2F);
+      // Diminished - vibrant red (same as b2 interval on fretboard)
+      badgeBg = const Color(0xFFEF4444);
+      badgeText = Colors.white;
     } else if (isAug) {
-      // More vibrant purple for augmented chords
-      badgeBg = isDark ? const Color(0xFF4A2D7A) : const Color(0xFFF3E8FF);
-      badgeText = isDark ? const Color(0xFFB088FF) : const Color(0xFF7C3AED);
+      // Augmented - vibrant purple (same as b7 interval on fretboard)
+      badgeBg = const Color(0xFFA855F7);
+      badgeText = Colors.white;
     } else if (isMajor) {
-      badgeBg = majorLight;
-      badgeText = isDark ? const Color(0xFF60A5FA) : AppTheme.tonicBlue;
+      // Major - vibrant blue (same as root/5th on fretboard)
+      badgeBg = const Color(0xFF3B82F6);
+      badgeText = Colors.white;
     } else {
-      badgeBg = minorLight;
-      badgeText = isDark ? const Color(0xFFFBBF24) : AppTheme.minorAmber;
+      // Minor - vibrant amber/yellow (same as b3 interval on fretboard)
+      badgeBg = const Color(0xFFEAB308);
+      badgeText = Colors.black87;
     }
 
     // Override colors for badge (transposer index)
@@ -199,24 +201,26 @@ class ChordCardGrid extends StatelessWidget {
     final bool isMajor = !isDim && !isAug && 
         (safeRoman.isNotEmpty && safeRoman[0] == safeRoman[0].toUpperCase());
 
-    // Color scheme based on chord quality - with improved dark mode visibility
+    // Color scheme based on chord quality - using fretboard interval colors for visibility
     Color badgeBg;
     Color badgeText;
 
     if (isDim) {
-      // More vibrant red for diminished chords
-      badgeBg = isDark ? const Color(0xFF7A2020) : const Color(0xFFFFEBEE);
-      badgeText = isDark ? const Color(0xFFFF6B6B) : const Color(0xFFD32F2F);
+      // Diminished - vibrant red (same as b2 interval on fretboard)
+      badgeBg = const Color(0xFFEF4444);
+      badgeText = Colors.white;
     } else if (isAug) {
-      // More vibrant purple for augmented chords
-      badgeBg = isDark ? const Color(0xFF4A2D7A) : const Color(0xFFF3E8FF);
-      badgeText = isDark ? const Color(0xFFB088FF) : const Color(0xFF7C3AED);
+      // Augmented - vibrant purple (same as b7 interval on fretboard)
+      badgeBg = const Color(0xFFA855F7);
+      badgeText = Colors.white;
     } else if (isMajor) {
-      badgeBg = majorLight;
-      badgeText = isDark ? const Color(0xFF60A5FA) : AppTheme.tonicBlue;
+      // Major - vibrant blue (same as root/5th on fretboard)
+      badgeBg = const Color(0xFF3B82F6);
+      badgeText = Colors.white;
     } else {
-      badgeBg = minorLight;
-      badgeText = isDark ? const Color(0xFFFBBF24) : AppTheme.minorAmber;
+      // Minor - vibrant amber/yellow (same as b3 interval on fretboard)
+      badgeBg = const Color(0xFFEAB308);
+      badgeText = Colors.black87;
     }
 
     String root = name.isNotEmpty ? name[0] : 'C';

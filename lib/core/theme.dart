@@ -257,16 +257,18 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: darkCardBg,
-        indicatorColor: darkMajorLight,
+        indicatorColor: tonicBlue, // Bright blue indicator in dark mode
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: tonicBlue);
+            // White text for visibility on bright blue indicator
+            return const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white);
           }
           return const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: darkTextSecondary);
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(size: 26, color: tonicBlue);
+            // White icon for visibility on bright blue indicator
+            return const IconThemeData(size: 26, color: Colors.white);
           }
           return const IconThemeData(size: 26, color: darkTextSecondary);
         }),

@@ -151,11 +151,11 @@ class DualCirclePainter extends CustomPainter {
       if (isPairActive) {
         final startAng = angle - step/2;
         final bool isMajorPrimary = (view == KeyView.major);
-        
+
         // Use theme-aware highlight colors
         final Color majFill = isMajorPrimary ? majorLightColor : Colors.transparent;
         final Color minFill = !isMajorPrimary ? minorLightColor : Colors.transparent;
-        
+
         // Major Segment Fill
         final majPath = Path()..arcTo(Rect.fromCircle(center: center, radius: rOuter), startAng, step, false)
           ..arcTo(Rect.fromCircle(center: center, radius: rDivider), startAng + step, -step, false)..close();
@@ -170,14 +170,25 @@ class DualCirclePainter extends CustomPainter {
       // Draw Text
       final rMajText = (rOuter + rDivider) / 2;
       final rMinText = (rDivider + rInner) / 2;
-      
-      Color majTextColor = isPairActive 
-          ? (view == KeyView.major ? AppTheme.tonicBlue : AppTheme.tonicBlue.withOpacity(0.6)) 
-          : textPrimary;
-      
-      Color minTextColor = isPairActive 
-          ? (view == KeyView.relativeMinor ? AppTheme.minorAmber : AppTheme.minorAmber.withOpacity(0.7)) 
-          : textSecondary;
+
+      // Text colors - in dark mode, selected items need WHITE text for visibility
+      Color majTextColor;
+      Color minTextColor;
+
+      if (isPairActive) {
+        if (isDark) {
+          // Dark mode: white text on bright colored background when selected
+          majTextColor = (view == KeyView.major) ? Colors.white : Colors.white70;
+          minTextColor = (view == KeyView.relativeMinor) ? Colors.white : Colors.white70;
+        } else {
+          // Light mode: colored text on light background
+          majTextColor = (view == KeyView.major) ? AppTheme.tonicBlue : AppTheme.tonicBlue.withOpacity(0.6);
+          minTextColor = (view == KeyView.relativeMinor) ? AppTheme.minorAmber : AppTheme.minorAmber.withOpacity(0.7);
+        }
+      } else {
+        majTextColor = textPrimary;
+        minTextColor = textSecondary;
+      }
 
       // Major Text
       final xMaj = center.dx + rMajText * math.cos(angle);

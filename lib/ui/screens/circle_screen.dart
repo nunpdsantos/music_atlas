@@ -220,8 +220,6 @@ class _CurrentKeyCard extends StatelessWidget {
     final root = state.selectedMajorRoot;
     final relMinor = TheoryEngine.kRelativeMinors[root] ?? '?';
 
-    final activeColor = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
-    
     // Theme-aware colors
     final cardBg = AppTheme.getCardBg(context);
     final borderColor = AppTheme.getBorderColor(context);
@@ -229,6 +227,11 @@ class _CurrentKeyCard extends StatelessWidget {
     final textSecondary = AppTheme.getTextSecondary(context);
     final textPrimary = AppTheme.getTextPrimary(context);
     final isDark = AppTheme.isDark(context);
+
+    // Title color - brighter in dark mode for visibility
+    final activeColor = isMajor
+        ? (isDark ? const Color(0xFF60A5FA) : AppTheme.tonicBlue)  // Brighter blue in dark
+        : (isDark ? const Color(0xFFFBBF24) : AppTheme.minorAmber); // Brighter amber in dark
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -300,7 +303,10 @@ class _CurrentKeyCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         decoration: BoxDecoration(
-                          color: isMajor ? cardBg : Colors.transparent,
+                          // Dark mode: bright blue background when selected
+                          color: isMajor
+                              ? (isDark ? AppTheme.tonicBlue : cardBg)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(14),
                           boxShadow: isMajor ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 3)] : [],
                         ),
@@ -310,7 +316,10 @@ class _CurrentKeyCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: isMajor ? AppTheme.tonicBlue : textSecondary,
+                            // Dark mode: white text on bright background when selected
+                            color: isMajor
+                                ? (isDark ? Colors.white : AppTheme.tonicBlue)
+                                : textSecondary,
                           ),
                         ),
                       ),
@@ -320,7 +329,10 @@ class _CurrentKeyCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         decoration: BoxDecoration(
-                          color: !isMajor ? cardBg : Colors.transparent,
+                          // Dark mode: bright orange background when selected
+                          color: !isMajor
+                              ? (isDark ? const Color(0xFFF97316) : cardBg)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(14),
                           boxShadow: !isMajor ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 3)] : [],
                         ),
@@ -330,7 +342,10 @@ class _CurrentKeyCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: !isMajor ? AppTheme.minorAmber : textSecondary,
+                            // Dark mode: white text on bright background when selected
+                            color: !isMajor
+                                ? (isDark ? Colors.white : AppTheme.minorAmber)
+                                : textSecondary,
                           ),
                         ),
                       ),

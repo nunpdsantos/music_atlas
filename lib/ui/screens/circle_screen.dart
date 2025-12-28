@@ -28,9 +28,26 @@ class CircleScreen extends ConsumerWidget {
     final majorLight = AppTheme.getMajorLight(context);
     final minorLight = AppTheme.getMinorLight(context);
 
-    final scaleBg = isMajor ? majorLight : minorLight;
-    final scaleText = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
-    final scaleBorder = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+    final isDark = AppTheme.isDark(context);
+
+    // Dynamic Colors for the Scale Row
+    // Light mode: subtle backgrounds with colored text
+    // Dark mode: vibrant backgrounds with white text
+    final Color scaleBg;
+    final Color scaleText;
+    final Color scaleBorder;
+
+    if (isDark) {
+      // Dark mode - bright vibrant colors
+      scaleBg = isMajor ? AppTheme.tonicBlue : const Color(0xFFF97316);
+      scaleText = Colors.white;
+      scaleBorder = isMajor ? AppTheme.tonicBlue : const Color(0xFFF97316);
+    } else {
+      // Light mode - subtle backgrounds with colored text
+      scaleBg = isMajor ? majorLight : minorLight;
+      scaleText = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+      scaleBorder = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+    }
 
     return Scaffold(
       appBar: AppBar(

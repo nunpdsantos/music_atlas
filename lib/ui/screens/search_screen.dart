@@ -478,21 +478,41 @@ class _ChordResultCard extends StatelessWidget {
     final bool isMajor = !isDim && !isMinor && !isAug;
 
     // Color scheme based on chord quality
+    // Light mode: subtle backgrounds with colored text
+    // Dark mode: vibrant backgrounds with white text
     Color badgeBg;
     Color badgeText;
 
-    if (isDim) {
-      badgeBg = isDark ? const Color(0xFF4A1515) : const Color(0xFFFFEBEE);
-      badgeText = const Color(0xFFD32F2F);
-    } else if (isAug) {
-      badgeBg = isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF);
-      badgeText = const Color(0xFF7C3AED);
-    } else if (isMajor) {
-      badgeBg = AppTheme.getMajorLight(context);
-      badgeText = AppTheme.tonicBlue;
+    if (isDark) {
+      // Dark mode - bright vibrant colors
+      if (isDim) {
+        badgeBg = const Color(0xFFDC2626);
+        badgeText = Colors.white;
+      } else if (isAug) {
+        badgeBg = const Color(0xFF9333EA);
+        badgeText = Colors.white;
+      } else if (isMajor) {
+        badgeBg = AppTheme.tonicBlue;
+        badgeText = Colors.white;
+      } else {
+        badgeBg = const Color(0xFFF97316);
+        badgeText = Colors.white;
+      }
     } else {
-      badgeBg = AppTheme.getMinorLight(context);
-      badgeText = AppTheme.minorAmber;
+      // Light mode - subtle backgrounds with colored text
+      if (isDim) {
+        badgeBg = const Color(0xFFFFEBEE);
+        badgeText = const Color(0xFFD32F2F);
+      } else if (isAug) {
+        badgeBg = const Color(0xFFF3E8FF);
+        badgeText = const Color(0xFF7C3AED);
+      } else if (isMajor) {
+        badgeBg = AppTheme.getMajorLight(context);
+        badgeText = AppTheme.tonicBlue;
+      } else {
+        badgeBg = AppTheme.getMinorLight(context);
+        badgeText = AppTheme.minorAmber;
+      }
     }
 
     // Extract root for fretboard

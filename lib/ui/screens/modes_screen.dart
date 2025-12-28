@@ -45,9 +45,23 @@ class _ModesScreenState extends State<ModesScreen> {
     final isDark = AppTheme.isDark(context);
 
     // Dynamic Colors for the Scale Row
-    final Color noteBg = isMajor ? majorLight : minorLight;
-    final Color noteTxt = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
-    final Color noteBorder = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+    // Light mode: subtle backgrounds with colored text
+    // Dark mode: vibrant backgrounds with white text
+    final Color noteBg;
+    final Color noteTxt;
+    final Color noteBorder;
+
+    if (isDark) {
+      // Dark mode - bright vibrant colors
+      noteBg = isMajor ? AppTheme.tonicBlue : const Color(0xFFF97316);
+      noteTxt = Colors.white;
+      noteBorder = isMajor ? AppTheme.tonicBlue : const Color(0xFFF97316);
+    } else {
+      // Light mode - subtle backgrounds with colored text
+      noteBg = isMajor ? majorLight : minorLight;
+      noteTxt = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+      noteBorder = isMajor ? AppTheme.tonicBlue : AppTheme.minorAmber;
+    }
 
     return Scaffold(
       backgroundColor: scaffoldBg,

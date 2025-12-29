@@ -28,6 +28,18 @@ class MusicAtlasApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       // We use a Builder here to get a context that has access to MediaQuery
+      builder: (context, child) {
+        // Limit text scaling to prevent UI from getting too large on some devices
+        final mediaQuery = MediaQuery.of(context);
+        final constrainedTextScaleFactor = mediaQuery.textScaleFactor.clamp(0.85, 1.15);
+
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaleFactor: constrainedTextScaleFactor,
+          ),
+          child: child!,
+        );
+      },
       home: Builder(
         builder: (context) {
           // INITIALIZE THE SCALER HERE

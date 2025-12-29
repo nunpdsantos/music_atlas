@@ -13,6 +13,7 @@ class PianoKeyboard extends StatelessWidget {
   final String root;
   final int octaves;
   final bool isDark;
+  final bool showIntervalLabels;
 
   /// Starting pitch class (0 = C). You can change this if you want the keyboard to start elsewhere.
   final int startPc;
@@ -24,6 +25,7 @@ class PianoKeyboard extends StatelessWidget {
     this.octaves = 1,
     this.startPc = 0,
     this.isDark = false,
+    this.showIntervalLabels = false,
   });
 
   @override
@@ -110,6 +112,7 @@ class PianoKeyboard extends StatelessWidget {
                           octaves: octaves <= 1 ? 1 : 2,
                           startPc: startPc,
                           isDark: isDark,
+                          showIntervalLabels: showIntervalLabels,
                         ),
                       ),
                     ),
@@ -130,6 +133,7 @@ class _PremiumPianoPainter extends CustomPainter {
   final int octaves;
   final int startPc;
   final bool isDark;
+  final bool showIntervalLabels;
 
   _PremiumPianoPainter({
     required this.tones,
@@ -137,6 +141,7 @@ class _PremiumPianoPainter extends CustomPainter {
     required this.octaves,
     required this.startPc,
     required this.isDark,
+    required this.showIntervalLabels,
   });
 
   static const List<int> _whitePcs = <int>[0, 2, 4, 5, 7, 9, 11]; // C D E F G A B
@@ -521,7 +526,11 @@ class _PremiumPianoPainter extends CustomPainter {
       );
     }
 
-    // Note label
+    // Note label - show interval label or note name based on setting
+    final String displayText = showIntervalLabels
+        ? AppTheme.getIntervalLabel(interval)
+        : matching;
+
     final Color textColor = isRoot
         ? Colors.white
         : (onBlack
@@ -530,7 +539,7 @@ class _PremiumPianoPainter extends CustomPainter {
 
     final style = TextStyle(
       fontWeight: FontWeight.w700,
-      fontSize: 10,
+      fontSize: showIntervalLabels ? 9 : 10,
       color: textColor,
       shadows: isRoot
           ? [
@@ -544,7 +553,7 @@ class _PremiumPianoPainter extends CustomPainter {
     );
 
     final tp = TextPainter(
-      text: TextSpan(text: matching, style: style),
+      text: TextSpan(text: displayText, style: style),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
     )..layout();
@@ -558,6 +567,7 @@ class _PremiumPianoPainter extends CustomPainter {
         oldDelegate.startPc != startPc ||
         oldDelegate.root != root ||
         oldDelegate.isDark != isDark ||
+        oldDelegate.showIntervalLabels != showIntervalLabels ||
         oldDelegate.tones.length != tones.length;
   }
 }

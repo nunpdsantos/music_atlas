@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
 import '../../core/note_utils.dart';
+import '../../logic/providers.dart';
 import 'guitar_fretboard.dart';
 import 'piano_keyboard.dart';
 import 'fretboard_overview.dart';
@@ -8,7 +10,7 @@ import 'fretboard_overview.dart';
 /// Premium interactive instrument sheet with elegant design.
 /// Provides a polished interface for visualizing chords and scales
 /// on guitar fretboard and piano keyboard.
-class InteractiveFretboardSheet extends StatefulWidget {
+class InteractiveFretboardSheet extends ConsumerStatefulWidget {
   final String? chordName;
   final String? title;
   final List<String>? tones;
@@ -29,10 +31,10 @@ class InteractiveFretboardSheet extends StatefulWidget {
   });
 
   @override
-  State<InteractiveFretboardSheet> createState() => _InteractiveFretboardSheetState();
+  ConsumerState<InteractiveFretboardSheet> createState() => _InteractiveFretboardSheetState();
 }
 
-class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
+class _InteractiveFretboardSheetState extends ConsumerState<InteractiveFretboardSheet> {
   int _selectedInstrument = 0; // 0 = Guitar, 1 = Piano
   late ScrollController _scrollController;
 
@@ -63,12 +65,14 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(appSettingsProvider);
     final cardBg = AppTheme.getCardBg(context);
     final borderColor = AppTheme.getBorderColor(context);
     final textPrimary = AppTheme.getTextPrimary(context);
     final textSecondary = AppTheme.getTextSecondary(context);
     final scaffoldBg = AppTheme.getScaffoldBg(context);
     final isDark = AppTheme.isDark(context);
+    final showIntervalLabels = settings.showIntervalLabels;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.72,
@@ -124,8 +128,8 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: _selectedInstrument == 0
-                  ? _buildGuitarLayout(textSecondary, isDark)
-                  : _buildPianoLayout(context, isDark),
+                  ? _buildGuitarLayout(textSecondary, isDark, showIntervalLabels)
+                  : _buildPianoLayout(context, isDark, showIntervalLabels),
             ),
           ),
         ],
@@ -285,7 +289,7 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
     );
   }
 
-  Widget _buildGuitarLayout(Color textSecondary, bool isDark) {
+  Widget _buildGuitarLayout(Color textSecondary, bool isDark, bool showIntervalLabels) {
     final double screenWidth = MediaQuery.of(context).size.width - 40;
     final double fretWidth = screenWidth / 5.0;
     final double contentWidth = fretWidth * 12;
@@ -314,6 +318,7 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
                 scrollController: _scrollController,
                 fretWidth: fretWidth,
                 totalFrets: 12,
+                showIntervalLabels: showIntervalLabels,
               ),
             ),
           ),
@@ -355,7 +360,7 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
     );
   }
 
-  Widget _buildPianoLayout(BuildContext context, bool isDark) {
+  Widget _buildPianoLayout(BuildContext context, bool isDark, bool showIntervalLabels) {
     return Center(
       child: PianoKeyboard(
         tones: _safeTones,
@@ -363,6 +368,7 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
         octaves: 2,
         startPc: 0, // Always start from C so notes appear on correct keys
         isDark: isDark,
+        showIntervalLabels: showIntervalLabels,
       ),
     );
   }

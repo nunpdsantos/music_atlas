@@ -10,6 +10,7 @@ class GuitarFretboard extends StatefulWidget {
   final bool leftHanded; // Headstock Right
   final double height;
   final ScrollController? scrollController;
+  final bool showIntervalLabels;
 
   // Layout constraints passed from parent
   final double fretWidth;
@@ -25,6 +26,7 @@ class GuitarFretboard extends StatefulWidget {
     this.scrollController,
     required this.fretWidth,
     this.totalFrets = 12,
+    this.showIntervalLabels = false,
   });
 
   @override
@@ -62,6 +64,7 @@ class _GuitarFretboardState extends State<GuitarFretboard> {
             totalFrets: widget.totalFrets,
             nutPadding: nutPadding,
             isDark: isDark,
+            showIntervalLabels: widget.showIntervalLabels,
           ),
         ),
       ),
@@ -77,6 +80,7 @@ class GuitarFretboardPainter extends CustomPainter {
   final int totalFrets;
   final double nutPadding;
   final bool isDark;
+  final bool showIntervalLabels;
 
   GuitarFretboardPainter({
     required this.tones,
@@ -86,6 +90,7 @@ class GuitarFretboardPainter extends CustomPainter {
     required this.totalFrets,
     required this.nutPadding,
     required this.isDark,
+    required this.showIntervalLabels,
   });
 
   static const List<int> _openStringMidi = [40, 45, 50, 55, 59, 64]; // E A D G B E
@@ -539,11 +544,15 @@ class GuitarFretboardPainter extends CustomPainter {
         ..color = Colors.black.withOpacity(0.2),
     );
 
-    // Note label with shadow
+    // Note label with shadow - show interval label or note name based on setting
+    final String displayText = showIntervalLabels
+        ? AppTheme.getIntervalLabel(interval)
+        : label;
+
     final textStyle = TextStyle(
       color: Colors.white,
       fontWeight: FontWeight.w700,
-      fontSize: 10,
+      fontSize: showIntervalLabels ? 9 : 10,
       shadows: [
         Shadow(
           color: Colors.black.withOpacity(0.3),
@@ -554,7 +563,7 @@ class GuitarFretboardPainter extends CustomPainter {
     );
 
     final tp = TextPainter(
-      text: TextSpan(text: label, style: textStyle),
+      text: TextSpan(text: displayText, style: textStyle),
       textDirection: TextDirection.ltr,
     )..layout();
 
@@ -568,6 +577,7 @@ class GuitarFretboardPainter extends CustomPainter {
     if (oldDelegate.totalFrets != totalFrets) return true;
     if (oldDelegate.fretWidth != fretWidth) return true;
     if (oldDelegate.isDark != isDark) return true;
+    if (oldDelegate.showIntervalLabels != showIntervalLabels) return true;
     if (oldDelegate.tones.length != tones.length) return true;
 
     for (int i = 0; i < tones.length; i++) {

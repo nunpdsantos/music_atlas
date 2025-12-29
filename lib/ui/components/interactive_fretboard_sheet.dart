@@ -356,15 +356,12 @@ class _InteractiveFretboardSheetState extends State<InteractiveFretboardSheet> {
   }
 
   Widget _buildPianoLayout(BuildContext context, bool isDark) {
-    final rootPc = NoteUtils.pitchClass(widget.root);
-    final startPc = rootPc >= 0 ? rootPc : 0;
-
     return Center(
       child: PianoKeyboard(
         tones: _safeTones,
         root: widget.root,
         octaves: 2,
-        startPc: startPc,
+        startPc: 0, // Always start from C so notes appear on correct keys
         isDark: isDark,
       ),
     );

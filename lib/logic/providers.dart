@@ -155,7 +155,7 @@ class AppSettings {
     this.isDarkMode = false,
     this.isLeftHanded = true,
     this.defaultOctaves = 2,
-    this.showIntervalLabels = true,
+    this.showIntervalLabels = false,
   });
 
   AppSettings copyWith({

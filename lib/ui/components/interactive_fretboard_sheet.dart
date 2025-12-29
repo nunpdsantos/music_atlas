@@ -114,7 +114,7 @@ class _InteractiveFretboardSheetState extends ConsumerState<InteractiveFretboard
           if (_safeTones.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _buildDynamicLegend(textSecondary, isDark),
+              child: _buildDynamicLegend(textSecondary, isDark, showIntervalLabels),
             ),
 
           const SizedBox(height: 16),
@@ -242,25 +242,32 @@ class _InteractiveFretboardSheetState extends ConsumerState<InteractiveFretboard
     );
   }
 
-  Widget _buildDynamicLegend(Color textSecondary, bool isDark) {
+  Widget _buildDynamicLegend(Color textSecondary, bool isDark, bool showIntervalLabels) {
     final rootPc = NoteUtils.pitchClass(widget.root);
-    final Set<int> presentIntervals = {};
+
+    // Build list of present tones with their intervals
+    final List<Map<String, dynamic>> activeItems = [];
+    final Set<int> seenIntervals = {};
 
     for (var tone in _safeTones) {
       int pc = NoteUtils.pitchClass(tone);
       if (pc != -1) {
         int interval = (pc - rootPc + 12) % 12;
-        presentIntervals.add(interval);
+        if (!seenIntervals.contains(interval)) {
+          seenIntervals.add(interval);
+          activeItems.add({
+            'val': interval,
+            // When showIntervalLabels is ON (intervals on fretboard), show note names in legend
+            // When showIntervalLabels is OFF (notes on fretboard), show interval labels in legend
+            'label': showIntervalLabels ? tone : AppTheme.getIntervalLabel(interval),
+            'color': AppTheme.getIntervalColor(interval),
+          });
+        }
       }
     }
 
-    final allIntervals = List.generate(12, (i) => {
-      'val': i,
-      'label': AppTheme.getIntervalLabel(i),
-      'color': AppTheme.getIntervalColor(i),
-    });
-
-    final activeItems = allIntervals.where((i) => presentIntervals.contains(i['val'])).toList();
+    // Sort by interval value to maintain consistent order
+    activeItems.sort((a, b) => (a['val'] as int).compareTo(b['val'] as int));
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
